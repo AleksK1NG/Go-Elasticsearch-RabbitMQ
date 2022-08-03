@@ -11,12 +11,14 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/middlewares"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/rabbitmq"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-playground/validator"
 	"github.com/labstack/echo/v4"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"io"
 	"os"
 	"os/signal"
@@ -37,6 +39,8 @@ type app struct {
 	echo              *echo.Echo
 	validate          *validator.Validate
 	middlewareManager middlewares.MiddlewareManager
+	amqpConn          *amqp.Connection
+	amqpChan          *amqp.Channel
 }
 
 func NewApp(log logger.Logger, cfg *config.Config) *app {
@@ -58,6 +62,22 @@ func (a *app) Run() error {
 	}
 
 	a.middlewareManager = middlewares.NewMiddlewareManager(a.log, a.cfg, a.getHttpMetricsCb())
+
+	amqpConn, err := rabbitmq.NewRabbitMQ(a.cfg.RabbitMQ)
+	if err != nil {
+		return err
+	}
+	defer amqpConn.Close()
+	a.amqpConn = amqpConn
+
+	amqpChan, err := amqpConn.Channel()
+	if err != nil {
+		return err
+	}
+	defer amqpChan.Close()
+	a.amqpChan = amqpChan
+
+	a.log.Infof("rabbitmq connected: %+v", a.amqpConn)
 
 	elasticSearchClient, err := elastic.NewElasticSearchClient(a.cfg.ElasticSearch)
 	if err != nil {

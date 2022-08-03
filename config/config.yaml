@@ -49,3 +49,5 @@ elasticIndexes:
     path: config/mappings.json
     name: products
     alias: products-alias
+rabbitmq:
+  uri: amqp://guest:guest@localhost:5672/
