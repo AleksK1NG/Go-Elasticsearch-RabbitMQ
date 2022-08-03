@@ -51,3 +51,9 @@ elasticIndexes:
     alias: products-alias
 rabbitmq:
   uri: amqp://guest:guest@localhost:5672/
+exchangeAndQueueBindings:
+  indexProductBinding:
+    exchangeName: products
+    exchangeKind: direct
+    queueName: index-product
+    bindingKey: products-index
