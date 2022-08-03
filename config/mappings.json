@@ -52,7 +52,7 @@
         "analyzer": "autocomplete_analyzer",
         "search_analyzer" : "standard"
       },
-      "createdAt": {
+      "created_at": {
         "type": "date"
       }
     }

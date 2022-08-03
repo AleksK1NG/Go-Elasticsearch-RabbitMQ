@@ -3,10 +3,10 @@ grpc:
   port: :5001
   development: true
 http:
-  port: :5007
+  port: :8000
   development: true
   basePath: /api/v1
-  bankAccountsPath: /api/v1/accounts
+  productsPath: /api/v1/products
   debugErrorsResponse: true
   ignoreLogUrls: [ "metrics", "swagger" ]
 probes:
@@ -43,7 +43,7 @@ elasticSearch:
   username: ""
   password: ""
   apiKey: ""
-  enableLogging: false
+  enableLogging: true
 elasticIndexes:
   products:
     path: config/mappings.json

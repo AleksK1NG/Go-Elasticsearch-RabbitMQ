@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/AleksK1NG/go-elasticsearch/config"
+	"github.com/AleksK1NG/go-elasticsearch/internal/product/repository"
+	"github.com/AleksK1NG/go-elasticsearch/internal/product/transport/http/v1"
+	"github.com/AleksK1NG/go-elasticsearch/internal/product/usecase"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/elastic"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/middlewares"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-playground/validator"
@@ -26,12 +30,13 @@ const (
 )
 
 type app struct {
-	log           logger.Logger
-	cfg           *config.Config
-	doneCh        chan struct{}
-	elasticClient *elasticsearch.Client
-	echo          *echo.Echo
-	validate      *validator.Validate
+	log               logger.Logger
+	cfg               *config.Config
+	doneCh            chan struct{}
+	elasticClient     *elasticsearch.Client
+	echo              *echo.Echo
+	validate          *validator.Validate
+	middlewareManager middlewares.MiddlewareManager
 }
 
 func NewApp(log logger.Logger, cfg *config.Config) *app {
@@ -52,6 +57,8 @@ func (a *app) Run() error {
 		opentracing.SetGlobalTracer(tracer)
 	}
 
+	a.middlewareManager = middlewares.NewMiddlewareManager(a.log, a.cfg, a.getHttpMetricsCb())
+
 	elasticSearchClient, err := elastic.NewElasticSearchClient(a.cfg.ElasticSearch)
 	if err != nil {
 		return err
@@ -69,12 +76,21 @@ func (a *app) Run() error {
 		return err
 	}
 
+	elasticRepository := repository.NewEsRepository(a.log, a.cfg, a.elasticClient)
+	productUseCase := usecase.NewProductUseCase(a.log, a.cfg, elasticRepository)
+	productController := v1.NewProductController(a.log, a.cfg, productUseCase, a.echo.Group(a.cfg.Http.ProductsPath), a.validate)
+	productController.MapRoutes()
+
+	go func() {
+		if err := a.runHttpServer(); err != nil {
+			a.log.Errorf("(runHttpServer) err: %v", err)
+			cancel()
+		}
+	}()
+	a.log.Infof("%s is listening on PORT: %v", GetMicroserviceName(a.cfg), a.cfg.Http.Port)
+
 	<-ctx.Done()
 	a.waitShootDown(waitShotDownDuration)
-	//grpcServer.GracefulStop()
-	//if err := a.shutDownHealthCheckServer(ctx); err != nil {
-	//	a.log.Warnf("(shutDownHealthCheckServer) err: %v", err)
-	//}
 
 	if err := a.echo.Shutdown(ctx); err != nil {
 		a.log.Warnf("(Shutdown) err: %v", err)
@@ -154,4 +170,14 @@ func (a *app) uploadElasticMappings(ctx context.Context, indexConfig esclient.El
 
 	a.log.Infof("created index: %s", response.String())
 	return nil
+}
+
+func (a *app) getHttpMetricsCb() middlewares.MiddlewareMetricsCb {
+	return func(err error) {
+		if err != nil {
+			//a.metrics.ErrorHttpRequests.Inc()
+		} else {
+			//a.metrics.SuccessHttpRequests.Inc()
+		}
+	}
 }
