@@ -39,7 +39,7 @@ timeouts:
   postgresInitMilliseconds: 1500
   postgresInitRetryCount: 3
 elasticSearch:
-  addresses: ["http://localhost:9200"]
+  addresses: [ "http://localhost:9200" ]
   username: ""
   password: ""
   apiKey: ""
@@ -57,3 +57,5 @@ exchangeAndQueueBindings:
     exchangeKind: direct
     queueName: index-product
     bindingKey: products-index
+    concurrency: 10
+    consumer: products-consumer

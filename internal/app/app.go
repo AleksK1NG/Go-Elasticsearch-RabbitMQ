@@ -6,6 +6,7 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/config"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/repository"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/transport/http/v1"
+	productRabbitConsumer "github.com/AleksK1NG/go-elasticsearch/internal/product/transport/rabbitmq"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/usecase"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/elastic"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
@@ -118,6 +119,23 @@ func (a *app) Run() error {
 		}
 	}()
 	a.log.Infof("%s is listening on PORT: %v", GetMicroserviceName(a.cfg), a.cfg.Http.Port)
+
+	productConsumer := productRabbitConsumer.NewConsumer(a.log, a.cfg, a.amqpConn, a.amqpChan, productUseCase)
+
+	go func() {
+		if err := rabbitmq.ConsumeQueue(
+			ctx,
+			a.amqpChan,
+			a.cfg.ExchangeAndQueueBindings.IndexProductBinding.Concurrency,
+			a.cfg.ExchangeAndQueueBindings.IndexProductBinding.QueueName,
+			a.cfg.ExchangeAndQueueBindings.IndexProductBinding.Consumer,
+			productConsumer.ConsumeIndexDeliveries,
+		); err != nil {
+			a.log.Errorf("")
+			cancel()
+		}
+	}()
+	//rabbitmq.ConsumeQueue(ctx, a.amqpChan, 10, a.cfg.ExchangeAndQueueBindings.IndexProductBinding.QueueName, "consumerA", productConsumer.ConsumeDeliveriesB)
 
 	<-ctx.Done()
 	a.waitShootDown(waitShotDownDuration)
