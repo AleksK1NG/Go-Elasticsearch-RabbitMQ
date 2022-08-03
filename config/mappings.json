@@ -1,0 +1,60 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "autocomplete_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": [
+            "name_synonym_filter",
+            "lowercase",
+            "remove_duplicates",
+            "ngram_filter"
+          ]
+        }
+      },
+      "filter": {
+        "ngram_filter": {
+          "type": "edge_ngram",
+          "min_gram": 1,
+          "max_gram": 20
+        },
+        "name_synonym_filter" : {
+          "type": "synonym",
+          "synonyms": [
+            "Water, water, вода, Вода",
+            "Juice, juice, J7, сок, Сок"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text",
+        "analyzer": "autocomplete_analyzer",
+        "search_analyzer" : "standard"
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "autocomplete_analyzer",
+        "search_analyzer" : "standard"
+      },
+      "image_url": {
+        "type": "keyword"
+      },
+      "count_in_stock": {
+        "type": "integer"
+      },
+      "shop": {
+        "type": "text",
+        "analyzer": "autocomplete_analyzer",
+        "search_analyzer" : "standard"
+      },
+      "createdAt": {
+        "type": "date"
+      }
+    }
+  }
+}

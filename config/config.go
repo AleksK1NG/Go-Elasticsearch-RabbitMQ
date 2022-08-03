@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/constants"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/elastic"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/pkg/errors"
@@ -41,10 +42,6 @@ type Timeouts struct {
 	PostgresInitRetryCount   uint `mapstructure:"postgresInitRetryCount" validate:"required"`
 }
 
-type ElasticIndexes struct {
-	BankAccounts string `mapstructure:"bankAccounts" validate:"required"`
-}
-
 type Projections struct {
 	MongoGroup                  string `mapstructure:"mongoGroup" validate:"required"`
 	MongoSubscriptionPoolSize   int    `mapstructure:"mongoSubscriptionPoolSize" validate:"required,gte=0"`
@@ -59,6 +56,10 @@ type Http struct {
 	BankAccountsPath    string   `mapstructure:"bankAccountsPath" validate:"required"`
 	DebugErrorsResponse bool     `mapstructure:"debugErrorsResponse"`
 	IgnoreLogUrls       []string `mapstructure:"ignoreLogUrls"`
+}
+
+type ElasticIndexes struct {
+	ProductsIndex esclient.ElasticIndex `mapstructure:"products" validate:"required"`
 }
 
 func InitConfig() (*Config, error) {

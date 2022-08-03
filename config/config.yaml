@@ -45,4 +45,7 @@ elasticSearch:
   apiKey: ""
   enableLogging: false
 elasticIndexes:
-  bankAccounts: accounts
+  products:
+    path: config/mappings.json
+    name: products
+    alias: products-alias

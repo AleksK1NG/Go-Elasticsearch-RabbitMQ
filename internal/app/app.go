@@ -12,6 +12,8 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/labstack/echo/v4"
 	"github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
+	"io"
 	"os"
 	"os/signal"
 	"strings"
@@ -63,6 +65,10 @@ func (a *app) Run() error {
 	}
 	a.log.Infof("Elastic info response: %s", elasticInfoResponse.String())
 
+	if err := a.initIndexes(ctx); err != nil {
+		return err
+	}
+
 	<-ctx.Done()
 	a.waitShootDown(waitShotDownDuration)
 	//grpcServer.GracefulStop()
@@ -88,4 +94,64 @@ func (a *app) waitShootDown(duration time.Duration) {
 
 func GetMicroserviceName(cfg *config.Config) string {
 	return fmt.Sprintf("(%s)", strings.ToUpper(cfg.ServiceName))
+}
+
+func (a *app) initIndexes(ctx context.Context) error {
+	exists, err := a.isIndexExists(ctx, a.cfg.ElasticIndexes.ProductsIndex.Name)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		if err := a.uploadElasticMappings(ctx, a.cfg.ElasticIndexes.ProductsIndex); err != nil {
+			return err
+		}
+	}
+	a.log.Infof("index exists: %+v", a.cfg.ElasticIndexes.ProductsIndex)
+	return nil
+}
+
+func (a *app) isIndexExists(ctx context.Context, indexName string) (bool, error) {
+	response, err := esclient.Exists(ctx, a.elasticClient, []string{indexName})
+	if err != nil {
+		a.log.Errorf("initIndexes err: %v", err)
+		return false, errors.Wrap(err, "esclient.Exists")
+	}
+	defer response.Body.Close()
+
+	a.log.Infof("exists response: %s", response)
+	return true, nil
+}
+
+func (a *app) uploadElasticMappings(ctx context.Context, indexConfig esclient.ElasticIndex) error {
+	getwd, err := os.Getwd()
+	if err != nil {
+		return errors.Wrap(err, "os.Getwd")
+	}
+	path := fmt.Sprintf("%s/%s", getwd, indexConfig.Path)
+
+	mappingsFile, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer mappingsFile.Close()
+
+	mappingsBytes, err := io.ReadAll(mappingsFile)
+	if err != nil {
+		return err
+	}
+
+	a.log.Infof("loaded mappings bytes: %s", string(mappingsBytes))
+
+	response, err := esclient.CreateIndex(ctx, a.elasticClient, indexConfig.Name, mappingsBytes)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.IsError() && response.StatusCode != 400 {
+		return errors.New(fmt.Sprintf("err init index: %s", response.String()))
+	}
+
+	a.log.Infof("created index: %s", response.String())
+	return nil
 }
