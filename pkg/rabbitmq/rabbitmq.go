@@ -21,6 +21,8 @@ type ExchangeAndQueueBinding struct {
 	ExchangeKind string `mapstructure:"exchangeKind" validate:"required"`
 	QueueName    string `mapstructure:"queueName" validate:"required"`
 	BindingKey   string `mapstructure:"bindingKey" validate:"required"`
+	Concurrency  int    `mapstructure:"concurrency" validate:"required"`
+	Consumer     string `mapstructure:"consumer" validate:"required"`
 }
 
 type Config struct {
@@ -80,10 +82,16 @@ func BindQueue(ctx context.Context, channel *amqp.Channel, queue, key, exchange 
 	return channel.QueueBind(queue, key, exchange, false, nil)
 }
 
-func ConsumeQueue(ctx context.Context, channel *amqp.Channel, concurrency int) error {
+type ConsumeDeliveriesWorker interface {
+	ConsumeDeliveries(ctx context.Context, deliveries <-chan amqp.Delivery) func() error
+}
+
+type DeliveriesConsumer func(ctx context.Context, deliveries <-chan amqp.Delivery) func() error
+
+func ConsumeQueue(ctx context.Context, channel *amqp.Channel, concurrency int, queue string, consumer string, worker DeliveriesConsumer) error {
 	deliveries, err := channel.Consume(
-		"queue",
-		"consumer",
+		queue,
+		consumer,
 		false,
 		false,
 		false,
@@ -96,7 +104,7 @@ func ConsumeQueue(ctx context.Context, channel *amqp.Channel, concurrency int) e
 
 	eg, ctx := errgroup.WithContext(ctx)
 	for i := 0; i <= concurrency; i++ {
-		eg.Go(processDeliveries(ctx, deliveries))
+		eg.Go(worker(ctx, deliveries))
 	}
 
 	return eg.Wait()
