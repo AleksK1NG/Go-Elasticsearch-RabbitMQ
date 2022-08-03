@@ -7,6 +7,7 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/pkg/elastic"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/rabbitmq"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/pkg/errors"
 	"os"
@@ -29,7 +30,8 @@ type Config struct {
 	ElasticIndexes ElasticIndexes   `mapstructure:"elasticIndexes" validate:"required"`
 	Http           Http             `mapstructure:"http"`
 	//Probes         probes.Config    `mapstructure:"probes"`
-	ElasticSearch elastic.Config `mapstructure:"elasticSearch" validate:"required"`
+	ElasticSearch elastic.Config  `mapstructure:"elasticSearch" validate:"required"`
+	RabbitMQ      rabbitmq.Config `mapstructure:"rabbitmq" validate:"required"`
 }
 
 type GRPC struct {
