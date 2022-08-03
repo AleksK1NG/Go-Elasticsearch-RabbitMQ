@@ -3,6 +3,7 @@ package esclient
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
@@ -86,6 +87,57 @@ func Exists(ctx context.Context, esClient *elasticsearch.Client, indexes []strin
 
 	if response.IsError() && response.StatusCode != 404 {
 		return nil, errors.New(response.String())
+	}
+
+	return response, nil
+}
+
+func Search(ctx context.Context, esClient *elasticsearch.Client, index, term string, fields []string) (*esapi.Response, error) {
+	//query := make(map[string]any, 5)
+	//multiMatch := map[string]any{"multi_match": map[string]any{
+	//	"query":  term,
+	//	"fields": fields,
+	//}}
+	//query["bool"] = map[string]any{"must": []map[string]any{multiMatch}}
+	//
+	//multiMatchBytes, err := json.Marshal(&multiMatch)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//log.Printf("json search: %s", string(multiMatchBytes))
+	//log.Printf("json search: %s", string(multiMatchBytes))
+
+	query := MultiMatchQuery{
+		Query: Query{
+			Bool: Bool{
+				Must: []any{MultiMatch{
+					Query:  term,
+					Fields: fields,
+				}},
+			},
+		},
+	}
+
+	dataBytes, err := json.Marshal(&query)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := esClient.Search(
+		esClient.Search.WithContext(ctx),
+		esClient.Search.WithIndex(index),
+		esClient.Search.WithBody(bytes.NewReader(dataBytes)),
+		esClient.Search.WithPretty(),
+		esClient.Search.WithHuman(),
+		esClient.Search.WithTimeout(5*time.Second),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.IsError() {
+		return nil, errors.Wrap(errors.New(response.String()), "esClient.Search error")
 	}
 
 	return response, nil

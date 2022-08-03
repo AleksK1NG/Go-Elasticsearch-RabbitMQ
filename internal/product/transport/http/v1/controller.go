@@ -51,3 +51,19 @@ func (h *productController) index() echo.HandlerFunc {
 		return c.JSON(http.StatusCreated, product)
 	}
 }
+
+func (h *productController) search() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		ctx, span := tracing.StartHttpServerTracerSpan(c, "productController.search")
+		defer span.Finish()
+
+		searchResult, err := h.productUseCase.Search(ctx, c.QueryParam("search"))
+		if err != nil {
+			h.log.Errorf("(productUseCase.Search) err: %v", tracing.TraceWithErr(span, err))
+			return httpErrors.ErrorCtxResponse(c, err, h.cfg.Http.DebugErrorsResponse)
+		}
+
+		h.log.Infof("created product: %+v", searchResult)
+		return c.JSON(http.StatusCreated, searchResult)
+	}
+}
