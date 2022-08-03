@@ -77,7 +77,17 @@ func (a *app) Run() error {
 	defer amqpChan.Close()
 	a.amqpChan = amqpChan
 
+	if err := a.amqpChan.Qos(1, 0, true); err != nil {
+		return err
+	}
+
 	a.log.Infof("rabbitmq connected: %+v", a.amqpConn)
+
+	queue, err := rabbitmq.DeclareBinding(ctx, a.amqpChan, a.cfg.ExchangeAndQueueBindings.IndexProductBinding)
+	if err != nil {
+		return err
+	}
+	a.log.Infof("rabbitmq queue created: %+v for binding: %+v", queue, a.cfg.ExchangeAndQueueBindings.IndexProductBinding)
 
 	elasticSearchClient, err := elastic.NewElasticSearchClient(a.cfg.ElasticSearch)
 	if err != nil {

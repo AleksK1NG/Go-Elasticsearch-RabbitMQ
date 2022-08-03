@@ -30,8 +30,13 @@ type Config struct {
 	ElasticIndexes ElasticIndexes   `mapstructure:"elasticIndexes" validate:"required"`
 	Http           Http             `mapstructure:"http"`
 	//Probes         probes.Config    `mapstructure:"probes"`
-	ElasticSearch elastic.Config  `mapstructure:"elasticSearch" validate:"required"`
-	RabbitMQ      rabbitmq.Config `mapstructure:"rabbitmq" validate:"required"`
+	ElasticSearch            elastic.Config           `mapstructure:"elasticSearch" validate:"required"`
+	RabbitMQ                 rabbitmq.Config          `mapstructure:"rabbitmq" validate:"required"`
+	ExchangeAndQueueBindings ExchangeAndQueueBindings `mapstructure:"exchangeAndQueueBindings" validate:"required"`
+}
+
+type ExchangeAndQueueBindings struct {
+	IndexProductBinding rabbitmq.ExchangeAndQueueBinding `mapstructure:"indexProductBinding" validate:"required"`
 }
 
 type GRPC struct {
