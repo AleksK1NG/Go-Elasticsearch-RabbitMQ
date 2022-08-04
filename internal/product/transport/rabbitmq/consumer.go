@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/AleksK1NG/go-elasticsearch/config"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/domain"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
@@ -26,9 +27,9 @@ func NewConsumer(
 	return &consumer{log: log, cfg: cfg, amqpConn: amqpConn, amqpChan: amqpChan, productUseCase: productUseCase}
 }
 
-func (c *consumer) ConsumeIndexDeliveries(ctx context.Context, deliveries <-chan amqp.Delivery) func() error {
+func (c *consumer) ConsumeIndexDeliveries(ctx context.Context, deliveries <-chan amqp.Delivery, workerID int) func() error {
 	return func() error {
-		c.log.Infof("starting consumer for queue deliveries: %s", c.cfg.ExchangeAndQueueBindings.IndexProductBinding.QueueName)
+		c.log.Infof("starting consumer workerID: %d, for queue deliveries: %s", workerID, c.cfg.ExchangeAndQueueBindings.IndexProductBinding.QueueName)
 
 		for {
 			select {
@@ -40,32 +41,26 @@ func (c *consumer) ConsumeIndexDeliveries(ctx context.Context, deliveries <-chan
 				if !ok {
 					c.log.Errorf("NOT OK deliveries")
 				}
-				c.log.Infof("Consumer delivery: msg data: %s, headers: %+v", string(msg.Body), msg.Headers)
-				if err := msg.Ack(true); err != nil {
+				c.log.Infof("Consumer delivery: workerID: %d, msg data: %s, headers: %+v", workerID, string(msg.Body), msg.Headers)
+				if err := c.indexProduct(ctx, msg); err != nil {
 					return err
 				}
+				c.log.Infof("Consumer <<<ACK>>> delivery: workerID: %d, msg data: %s, headers: %+v", workerID, string(msg.Body), msg.Headers)
 			}
 		}
 
-		c.log.Info("products consumer done")
-		return nil
 	}
 }
 
-func (c *consumer) ConsumeDeliveriesB(ctx context.Context, deliveries <-chan amqp.Delivery) func() error {
-	return func() error {
-		for delivery := range deliveries {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-			}
-
-			c.log.Infof("delivery: %s", string(delivery.Body))
-			if err := delivery.Ack(true); err != nil {
-				return err
-			}
-		}
-		return nil
+func (c *consumer) indexProduct(ctx context.Context, msg amqp.Delivery) error {
+	var product domain.Product
+	if err := json.Unmarshal(msg.Body, &product); err != nil {
+		c.log.Errorf("indexProduct json.Unmarshal <<<Reject>>> err: %v", err)
+		return msg.Reject(true)
 	}
+	if err := c.productUseCase.Index(ctx, product); err != nil {
+		c.log.Errorf("indexProduct productUseCase.Index <<<Reject>>> err: %v", err)
+		return msg.Reject(true)
+	}
+	return msg.Ack(true)
 }
