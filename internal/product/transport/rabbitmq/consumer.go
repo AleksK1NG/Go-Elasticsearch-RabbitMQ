@@ -30,17 +30,20 @@ func (c *consumer) ConsumeIndexDeliveries(ctx context.Context, deliveries <-chan
 	return func() error {
 		c.log.Infof("starting consumer for queue deliveries: %s", c.cfg.ExchangeAndQueueBindings.IndexProductBinding.QueueName)
 
-		for delivery := range deliveries {
+		for {
 			select {
 			case <-ctx.Done():
 				c.log.Errorf("products consumer ctx done: %v", ctx.Err())
 				return ctx.Err()
-			default:
-			}
 
-			c.log.Infof("Consumer delivery: %s", string(delivery.Body))
-			if err := delivery.Ack(true); err != nil {
-				return err
+			case msg, ok := <-deliveries:
+				if !ok {
+					c.log.Errorf("NOT OK deliveries")
+				}
+				c.log.Infof("Consumer delivery: msg data: %s, headers: %+v", string(msg.Body), msg.Headers)
+				if err := msg.Ack(true); err != nil {
+					return err
+				}
 			}
 		}
 
