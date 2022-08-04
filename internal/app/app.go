@@ -121,7 +121,12 @@ func (a *app) Run() error {
 	}()
 	a.log.Infof("%s is listening on PORT: %v", GetMicroserviceName(a.cfg), a.cfg.Http.Port)
 
-	productConsumer := productRabbitConsumer.NewConsumer(a.log, a.cfg, a.amqpConn, a.amqpChan, productUseCase)
+	productConsumer := productRabbitConsumer.NewConsumer(a.log, a.cfg, a.amqpConn, a.amqpChan, productUseCase, a.elasticClient)
+	if err := productConsumer.InitBulkIndexer(); err != nil {
+		a.log.Errorf("(InitBulkIndexer) err: %v", err)
+		cancel()
+	}
+	defer productConsumer.Close(ctx)
 
 	go func() {
 		if err := rabbitmq.ConsumeQueue(
