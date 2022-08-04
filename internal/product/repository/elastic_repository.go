@@ -107,3 +107,69 @@ func (e *esRepository) Search(ctx context.Context, term string) (any, error) {
 	e.log.Infof("repository search result responseList: %+v", responseList)
 	return responseList, nil
 }
+
+//func (e *esRepository) BulkIndex(ctx context.Context, product domain.Product) error {
+//
+//	bulkIndexer, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
+//		NumWorkers: 10,
+//		//FlushBytes:          0,
+//		FlushInterval: 5 * time.Second,
+//		Client:        e.esClient,
+//		OnError: func(ctx context.Context, err error) {
+//			e.log.Errorf("bulk indexer onError: %v", err)
+//		},
+//		OnFlushStart: func(ctx context.Context) context.Context {
+//			e.log.Infof("starting bulk indexer for index: %s", e.cfg.ElasticIndexes.ProductsIndex.Name)
+//			return ctx
+//		},
+//		OnFlushEnd: func(ctx context.Context) {
+//			e.log.Infof("finished bulk indexer for index: %s", e.cfg.ElasticIndexes.ProductsIndex.Name)
+//		},
+//		Index:   e.cfg.ElasticIndexes.ProductsIndex.Name,
+//		Human:   true,
+//		Pretty:  true,
+//		Timeout: 5 * time.Second,
+//	})
+//	if err != nil {
+//		return errors.Wrap(err, "esutil.NewBulkIndexer")
+//	}
+//
+//	dataBytes, err := json.Marshal(&product)
+//	if err != nil {
+//		return errors.Wrap(err, "json.Marshal")
+//	}
+//	if err := bulkIndexer.Add(ctx, esutil.BulkIndexerItem{
+//		Index:      e.cfg.ElasticIndexes.ProductsIndex.Name,
+//		Action:     "create",
+//		DocumentID: product.ID,
+//		Body:       bytes.NewReader(dataBytes),
+//		OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
+//			e.log.Infof("bulk add success item: %s, response: %s", item.DocumentID, item2.DocumentID)
+//		},
+//		OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
+//			e.log.Infof("bulk add err item: %s, response: %s, err: %v", item.DocumentID, item2.DocumentID, err)
+//		},
+//	}); err != nil {
+//		return errors.Wrap(err, "bulkIndexer.Add")
+//	}
+//
+//	response, err := e.esClient.Bulk(
+//		bytes.NewReader(dataBytes),
+//		e.esClient.Bulk.WithIndex(e.cfg.ElasticIndexes.ProductsIndex.Name),
+//		e.esClient.Bulk.WithContext(ctx),
+//		e.esClient.Bulk.WithPretty(),
+//		e.esClient.Bulk.WithHuman(),
+//		e.esClient.Bulk.WithTimeout(5*time.Second),
+//	)
+//	if err != nil {
+//		return errors.Wrap(err, "esClient.Bulk")
+//	}
+//	defer response.Body.Close()
+//
+//	if response.IsError() {
+//		return errors.Wrap(errors.New(response.String()), "esClient.Bulk response error")
+//	}
+//
+//	e.log.Infof("document bulk indexed: %s", response.String())
+//	return nil
+//}
