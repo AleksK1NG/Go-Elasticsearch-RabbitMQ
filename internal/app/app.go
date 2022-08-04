@@ -2,10 +2,8 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/AleksK1NG/go-elasticsearch/config"
-	"github.com/AleksK1NG/go-elasticsearch/internal/product/domain"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/repository"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/transport/http/v1"
 	productRabbitConsumer "github.com/AleksK1NG/go-elasticsearch/internal/product/transport/rabbitmq"
@@ -22,7 +20,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
-	uuid "github.com/satori/go.uuid"
 	"io"
 	"os"
 	"os/signal"
@@ -146,40 +143,6 @@ func (a *app) Run() error {
 		return err
 	}
 	defer a.amqpPublisher.Close()
-
-	go func() {
-		time.Sleep(5 * time.Second)
-
-		product := domain.Product{
-			ID:           uuid.NewV4().String(),
-			Title:        "Alex PRO =D",
-			Description:  "Cool",
-			ImageURL:     "awesome",
-			CountInStock: 555555555,
-			Shop:         "PRO",
-			CreatedAt:    time.Now().UTC(),
-		}
-
-		dataBytes, err := json.Marshal(&product)
-		if err != nil {
-			return
-		}
-
-		if err := a.amqpPublisher.Publish(
-			ctx,
-			a.cfg.ExchangeAndQueueBindings.IndexProductBinding.ExchangeName,
-			a.cfg.ExchangeAndQueueBindings.IndexProductBinding.BindingKey,
-			amqp.Publishing{
-				Headers:   map[string]interface{}{"alex": "PRO =D"},
-				Timestamp: time.Now().UTC(),
-				Body:      dataBytes,
-			},
-		); err != nil {
-			a.log.Errorf("amqpPublisher.Publish err: %v", err)
-		}
-
-		a.log.Infof("message published: %+v", product)
-	}()
 
 	<-ctx.Done()
 	a.waitShootDown(waitShotDownDuration)

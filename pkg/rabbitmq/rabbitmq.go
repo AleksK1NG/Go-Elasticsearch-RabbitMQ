@@ -90,7 +90,7 @@ type ConsumeDeliveriesWorker interface {
 	ConsumeDeliveries(ctx context.Context, deliveries <-chan amqp.Delivery) func() error
 }
 
-type DeliveriesConsumer func(ctx context.Context, deliveries <-chan amqp.Delivery) func() error
+type DeliveriesConsumer func(ctx context.Context, deliveries <-chan amqp.Delivery, workerID int) func() error
 
 func ConsumeQueue(ctx context.Context, channel *amqp.Channel, concurrency int, queue string, consumer string, worker DeliveriesConsumer) error {
 	deliveries, err := channel.Consume(
@@ -108,7 +108,7 @@ func ConsumeQueue(ctx context.Context, channel *amqp.Channel, concurrency int, q
 
 	eg, ctx := errgroup.WithContext(ctx)
 	for i := 0; i <= concurrency; i++ {
-		eg.Go(worker(ctx, deliveries))
+		eg.Go(worker(ctx, deliveries, i))
 	}
 
 	return eg.Wait()
