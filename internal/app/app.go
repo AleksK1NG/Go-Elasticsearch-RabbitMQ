@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/AleksK1NG/go-elasticsearch/config"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/repository"
@@ -52,6 +53,10 @@ func NewApp(log logger.Logger, cfg *config.Config) *app {
 func (a *app) Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
+
+	if err := a.loadKeysMappings(); err != nil {
+		return err
+	}
 
 	// enable tracing
 	if a.cfg.Jaeger.Enable {
@@ -229,7 +234,52 @@ func (a *app) uploadElasticMappings(ctx context.Context, indexConfig esclient.El
 	}
 
 	a.log.Infof("created index: %s", response.String())
+
 	return nil
+}
+
+func (a *app) loadKeysMappings() error {
+	getwd, err := os.Getwd()
+	if err != nil {
+		return errors.Wrap(err, "os.Getwd")
+	}
+
+	keysJsonPath := fmt.Sprintf("%s/config/translate.json", getwd)
+	keysJsonPathFile, err := os.Open(keysJsonPath)
+	if err != nil {
+		return err
+	}
+	defer keysJsonPathFile.Close()
+
+	keysJsonBytes, err := io.ReadAll(keysJsonPathFile)
+	if err != nil {
+		return err
+	}
+
+	a.log.Infof("keys mappings: %s", string(keysJsonBytes))
+
+	keyMappings := map[string]string{}
+	if err := json.Unmarshal(keysJsonBytes, &keyMappings); err != nil {
+		return err
+	}
+	a.log.Infof("keys mappings data: %+v", keyMappings)
+
+	a.log.Infof("keys mappings processed data: %s", GetMissTypedWord("Фдуч ЗКЩ", keyMappings))
+
+	return nil
+}
+
+func GetMissTypedWord(originalWord string, keyMappings map[string]string) string {
+	sb := strings.Builder{}
+	for _, c := range []rune(originalWord) {
+		lowerCasedChar := strings.ToLower(string(c))
+		if char, ok := keyMappings[lowerCasedChar]; ok {
+			sb.WriteString(char)
+		} else {
+			sb.WriteString(lowerCasedChar)
+		}
+	}
+	return sb.String()
 }
 
 func (a *app) getHttpMetricsCb() middlewares.MiddlewareMetricsCb {

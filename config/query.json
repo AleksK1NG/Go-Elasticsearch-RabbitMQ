@@ -1,0 +1,32 @@
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "bool": {
+            "should": [
+              {
+                "multi_match": {
+                  "query": "cherry",
+                  "fields": [
+                    "title",
+                    "description"
+                  ]
+                }
+              },
+              {
+                "multi_match": {
+                  "query": "apple",
+                  "fields": [
+                    "title",
+                    "description"
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
