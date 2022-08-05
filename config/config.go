@@ -7,6 +7,7 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/pkg/elastic"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/probes"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/rabbitmq"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/pkg/errors"
@@ -22,14 +23,14 @@ func init() {
 }
 
 type Config struct {
-	ServiceName    string           `mapstructure:"serviceName"`
-	Logger         logger.LogConfig `mapstructure:"logger"`
-	GRPC           GRPC             `mapstructure:"grpc"`
-	Timeouts       Timeouts         `mapstructure:"timeouts" validate:"required"`
-	Jaeger         *tracing.Config  `mapstructure:"jaeger"`
-	ElasticIndexes ElasticIndexes   `mapstructure:"elasticIndexes" validate:"required"`
-	Http           Http             `mapstructure:"http"`
-	//Probes         probes.Config    `mapstructure:"probes"`
+	ServiceName              string                   `mapstructure:"serviceName"`
+	Logger                   logger.LogConfig         `mapstructure:"logger"`
+	GRPC                     GRPC                     `mapstructure:"grpc"`
+	Timeouts                 Timeouts                 `mapstructure:"timeouts" validate:"required"`
+	Jaeger                   *tracing.Config          `mapstructure:"jaeger"`
+	ElasticIndexes           ElasticIndexes           `mapstructure:"elasticIndexes" validate:"required"`
+	Http                     Http                     `mapstructure:"http"`
+	Probes                   probes.Config            `mapstructure:"probes"`
 	ElasticSearch            elastic.Config           `mapstructure:"elasticSearch" validate:"required"`
 	RabbitMQ                 rabbitmq.Config          `mapstructure:"rabbitmq" validate:"required"`
 	ExchangeAndQueueBindings ExchangeAndQueueBindings `mapstructure:"exchangeAndQueueBindings" validate:"required"`
