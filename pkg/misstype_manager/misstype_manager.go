@@ -22,6 +22,9 @@ func NewMissTypeManager(log logger.Logger, keyMappings map[string]string) *Keybo
 }
 
 func (k *KeyboardMissTypeManager) GetMissTypedWord(originalWord string) string {
+	originalWord = strings.ReplaceAll(originalWord, "Ё", "Е")
+	originalWord = strings.ReplaceAll(originalWord, "ё", "е")
+
 	sb := k.sbPool.Get().(*strings.Builder)
 	defer k.sbPool.Put(sb)
 	sb.Reset()
