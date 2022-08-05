@@ -13,6 +13,7 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/middlewares"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/misstype_manager"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/rabbitmq"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/elastic/go-elasticsearch/v8"
@@ -44,6 +45,7 @@ type app struct {
 	amqpConn          *amqp.Connection
 	amqpChan          *amqp.Channel
 	amqpPublisher     rabbitmq.AmqpPublisher
+	missTypeManager   misstype_manager.MissTypeManager
 }
 
 func NewApp(log logger.Logger, cfg *config.Config) *app {
@@ -54,9 +56,11 @@ func (a *app) Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
 
-	if err := a.loadKeysMappings(); err != nil {
+	missTypeManager, err := a.loadKeysMappings()
+	if err != nil {
 		return err
 	}
+	a.missTypeManager = missTypeManager
 
 	// enable tracing
 	if a.cfg.Jaeger.Enable {
@@ -113,7 +117,7 @@ func (a *app) Run() error {
 		return err
 	}
 
-	elasticRepository := repository.NewEsRepository(a.log, a.cfg, a.elasticClient)
+	elasticRepository := repository.NewEsRepository(a.log, a.cfg, a.elasticClient, a.missTypeManager)
 	productUseCase := usecase.NewProductUseCase(a.log, a.cfg, elasticRepository)
 	productController := v1.NewProductController(a.log, a.cfg, productUseCase, a.echo.Group(a.cfg.Http.ProductsPath), a.validate)
 	productController.MapRoutes()
@@ -199,6 +203,10 @@ func (a *app) isIndexExists(ctx context.Context, indexName string) (bool, error)
 	}
 	defer response.Body.Close()
 
+	if response.IsError() && response.StatusCode == 404 {
+		return false, nil
+	}
+
 	a.log.Infof("exists response: %s", response)
 	return true, nil
 }
@@ -238,48 +246,36 @@ func (a *app) uploadElasticMappings(ctx context.Context, indexConfig esclient.El
 	return nil
 }
 
-func (a *app) loadKeysMappings() error {
+func (a *app) loadKeysMappings() (*misstype_manager.KeyboardMissTypeManager, error) {
 	getwd, err := os.Getwd()
 	if err != nil {
-		return errors.Wrap(err, "os.Getwd")
+		return nil, errors.Wrap(err, "os.Getwd")
 	}
 
-	keysJsonPath := fmt.Sprintf("%s/config/translate.json", getwd)
-	keysJsonPathFile, err := os.Open(keysJsonPath)
+	keysJsonPathFile, err := os.Open(fmt.Sprintf("%s/config/translate.json", getwd))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer keysJsonPathFile.Close()
 
 	keysJsonBytes, err := io.ReadAll(keysJsonPathFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	a.log.Infof("keys mappings: %s", string(keysJsonBytes))
 
 	keyMappings := map[string]string{}
 	if err := json.Unmarshal(keysJsonBytes, &keyMappings); err != nil {
-		return err
+		return nil, err
 	}
 	a.log.Infof("keys mappings data: %+v", keyMappings)
 
-	a.log.Infof("keys mappings processed data: %s", GetMissTypedWord("Фдуч ЗКЩ", keyMappings))
+	missTypeManager := misstype_manager.NewMissTypeManager(a.log, keyMappings)
 
-	return nil
-}
+	a.log.Infof("keys mappings processed data: %s", missTypeManager.GetMissTypedWord("Фдуч ЗКЩ"))
 
-func GetMissTypedWord(originalWord string, keyMappings map[string]string) string {
-	sb := strings.Builder{}
-	for _, c := range []rune(originalWord) {
-		lowerCasedChar := strings.ToLower(string(c))
-		if char, ok := keyMappings[lowerCasedChar]; ok {
-			sb.WriteString(char)
-		} else {
-			sb.WriteString(lowerCasedChar)
-		}
-	}
-	return sb.String()
+	return missTypeManager, nil
 }
 
 func (a *app) getHttpMetricsCb() middlewares.MiddlewareMetricsCb {

@@ -86,10 +86,12 @@ func (c *consumer) bulkIndexProduct(ctx context.Context, msg amqp.Delivery) erro
 		DocumentID: product.ID,
 		Body:       bytes.NewReader(msg.Body),
 		OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
-			c.log.Infof("bulk indexer onSuccess for index: %s", c.cfg.ElasticIndexes.ProductsIndex.Name)
+			c.log.Debugf("bulk indexer onSuccess for index: %s", c.cfg.ElasticIndexes.ProductsIndex.Name)
 		},
 		OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
-			c.log.Errorf("bulk indexer OnFailure err: %v", err)
+			if err != nil {
+				c.log.Errorf("bulk indexer OnFailure err: %v", err)
+			}
 		},
 	}); err != nil {
 		c.log.Errorf("indexProduct bulkIndexer.Add <<<Reject>>> err: %v", err)

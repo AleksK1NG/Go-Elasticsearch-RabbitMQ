@@ -33,7 +33,7 @@ func TestConsumer_ConsumeIndexDeliveries(t *testing.T) {
 	defer amqpPublisher.Close()
 
 	for i := 0; i < 500; i++ {
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		product := domain.Product{
 			ID:           uuid.NewV4().String(),
