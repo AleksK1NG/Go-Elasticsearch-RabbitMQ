@@ -3,10 +3,10 @@ package rabbitmq
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"github.com/AleksK1NG/go-elasticsearch/config"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/domain"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/serializer"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esutil"
 	"github.com/pkg/errors"
@@ -62,8 +62,8 @@ func (c *consumer) ConsumeIndexDeliveries(ctx context.Context, deliveries <-chan
 
 func (c *consumer) indexProduct(ctx context.Context, msg amqp.Delivery) error {
 	var product domain.Product
-	if err := json.Unmarshal(msg.Body, &product); err != nil {
-		c.log.Errorf("indexProduct json.Unmarshal <<<Reject>>> err: %v", err)
+	if err := serializer.Unmarshal(msg.Body, &product); err != nil {
+		c.log.Errorf("indexProduct serializer.Unmarshal <<<Reject>>> err: %v", err)
 		return msg.Reject(true)
 	}
 	if err := c.productUseCase.Index(ctx, product); err != nil {
@@ -75,8 +75,8 @@ func (c *consumer) indexProduct(ctx context.Context, msg amqp.Delivery) error {
 
 func (c *consumer) bulkIndexProduct(ctx context.Context, msg amqp.Delivery) error {
 	var product domain.Product
-	if err := json.Unmarshal(msg.Body, &product); err != nil {
-		c.log.Errorf("indexProduct json.Unmarshal <<<Reject>>> err: %v", err)
+	if err := serializer.Unmarshal(msg.Body, &product); err != nil {
+		c.log.Errorf("indexProduct serializer.Unmarshal <<<Reject>>> err: %v", err)
 		return msg.Reject(true)
 	}
 
