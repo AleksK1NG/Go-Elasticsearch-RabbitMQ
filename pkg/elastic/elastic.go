@@ -7,6 +7,13 @@ import (
 	"os"
 )
 
+type BulkIndexerConfig struct {
+	NumWorkers           int `mapstructure:"numWorkers" validate:"required"`
+	FlushBytes           int `mapstructure:"flushBytes" validate:"required"`
+	FlushIntervalSeconds int `mapstructure:"flushIntervalSeconds" validate:"required"`
+	TimeoutMilliseconds  int `mapstructure:"timeoutMilliseconds" validate:"required"`
+}
+
 type Config struct {
 	Addresses []string `mapstructure:"addresses" validate:"required"`
 	Username  string   `mapstructure:"username"`

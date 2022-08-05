@@ -23,17 +23,18 @@ func init() {
 }
 
 type Config struct {
-	ServiceName              string                   `mapstructure:"serviceName"`
-	Logger                   logger.LogConfig         `mapstructure:"logger"`
-	GRPC                     GRPC                     `mapstructure:"grpc"`
-	Timeouts                 Timeouts                 `mapstructure:"timeouts" validate:"required"`
-	Jaeger                   *tracing.Config          `mapstructure:"jaeger"`
-	ElasticIndexes           ElasticIndexes           `mapstructure:"elasticIndexes" validate:"required"`
-	Http                     Http                     `mapstructure:"http"`
-	Probes                   probes.Config            `mapstructure:"probes"`
-	ElasticSearch            elastic.Config           `mapstructure:"elasticSearch" validate:"required"`
-	RabbitMQ                 rabbitmq.Config          `mapstructure:"rabbitmq" validate:"required"`
-	ExchangeAndQueueBindings ExchangeAndQueueBindings `mapstructure:"exchangeAndQueueBindings" validate:"required"`
+	ServiceName              string                    `mapstructure:"serviceName"`
+	Logger                   logger.LogConfig          `mapstructure:"logger"`
+	GRPC                     GRPC                      `mapstructure:"grpc"`
+	Timeouts                 Timeouts                  `mapstructure:"timeouts" validate:"required"`
+	Jaeger                   *tracing.Config           `mapstructure:"jaeger"`
+	ElasticIndexes           ElasticIndexes            `mapstructure:"elasticIndexes" validate:"required"`
+	Http                     Http                      `mapstructure:"http"`
+	Probes                   probes.Config             `mapstructure:"probes"`
+	ElasticSearch            elastic.Config            `mapstructure:"elasticSearch" validate:"required"`
+	RabbitMQ                 rabbitmq.Config           `mapstructure:"rabbitmq" validate:"required"`
+	ExchangeAndQueueBindings ExchangeAndQueueBindings  `mapstructure:"exchangeAndQueueBindings" validate:"required"`
+	BulkIndexerConfig        elastic.BulkIndexerConfig `mapstructure:"bulkIndexer" validate:"required"`
 }
 
 type ExchangeAndQueueBindings struct {

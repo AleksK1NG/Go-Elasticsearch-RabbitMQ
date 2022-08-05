@@ -112,9 +112,9 @@ func (c *consumer) bulkIndexProduct(ctx context.Context, msg amqp.Delivery) erro
 
 func (c *consumer) InitBulkIndexer() error {
 	bulkIndexer, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
-		NumWorkers: 10,
-		//FlushBytes:          0,
-		FlushInterval: 5 * time.Second,
+		NumWorkers:    c.cfg.BulkIndexerConfig.NumWorkers,
+		FlushBytes:    c.cfg.BulkIndexerConfig.FlushBytes,
+		FlushInterval: time.Duration(c.cfg.BulkIndexerConfig.FlushIntervalSeconds) * time.Second,
 		Client:        c.esClient,
 		OnError: func(ctx context.Context, err error) {
 			c.log.Errorf("bulk indexer onError: %v", err)
@@ -129,7 +129,7 @@ func (c *consumer) InitBulkIndexer() error {
 		Index:   c.cfg.ElasticIndexes.ProductsIndex.Name,
 		Human:   true,
 		Pretty:  true,
-		Timeout: 5 * time.Second,
+		Timeout: time.Duration(c.cfg.BulkIndexerConfig.TimeoutMilliseconds) * time.Second,
 	})
 	if err != nil {
 		return errors.Wrap(err, "esutil.NewBulkIndexer")
