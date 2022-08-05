@@ -1,26 +1,5 @@
 package esclient
 
-//type SearchQuery struct {
-//	Query `json:"query"`
-//}
-//
-//type MultiMatch struct {
-//	Query  string   `json:"query"`
-//	Fields []string `json:"fields"`
-//}
-//
-//type Must []struct {
-//	MultiMatch `json:"multi_match"`
-//}
-//
-//type Bool struct {
-//	Must `json:"must"`
-//}
-//
-//type Query struct {
-//	Bool `json:"bool"`
-//}
-
 type MultiMatchQuery struct {
 	Query Query `json:"query"`
 }

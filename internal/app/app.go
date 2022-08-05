@@ -46,6 +46,7 @@ type app struct {
 	amqpChan          *amqp.Channel
 	amqpPublisher     rabbitmq.AmqpPublisher
 	missTypeManager   misstype_manager.MissTypeManager
+	metricsServer     *echo.Echo
 }
 
 func NewApp(log logger.Logger, cfg *config.Config) *app {
@@ -157,11 +158,16 @@ func (a *app) Run() error {
 	}
 	defer a.amqpPublisher.Close()
 
+	a.runMetrics(cancel)
+
 	<-ctx.Done()
 	a.waitShootDown(waitShotDownDuration)
 
 	if err := a.echo.Shutdown(ctx); err != nil {
 		a.log.Warnf("(Shutdown) err: %v", err)
+	}
+	if err := a.metricsServer.Shutdown(ctx); err != nil {
+		a.log.Warnf("(Shutdown) metricsServer err: %v", err)
 	}
 
 	<-a.doneCh

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -16,6 +17,11 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"time"
+)
+
+const (
+	indexTimeout  = 5 * time.Second
+	searchTimeout = 5 * time.Second
 )
 
 type esRepository struct {
@@ -49,7 +55,7 @@ func (e *esRepository) Index(ctx context.Context, product domain.Product) error 
 		bytes.NewReader(dataBytes),
 		e.esClient.Index.WithPretty(),
 		e.esClient.Index.WithHuman(),
-		e.esClient.Index.WithTimeout(3*time.Second),
+		e.esClient.Index.WithTimeout(indexTimeout),
 		e.esClient.Index.WithContext(ctx),
 		e.esClient.Index.WithDocumentID(product.ID),
 	)
@@ -102,10 +108,10 @@ func (e *esRepository) Search(ctx context.Context, term string, pagination *util
 	response, err := e.esClient.Search(
 		e.esClient.Search.WithContext(ctx),
 		e.esClient.Search.WithIndex(e.cfg.ElasticIndexes.ProductsIndex.Name),
-		e.esClient.Search.WithBody(bytes.NewReader(dataBytes)),
+		e.esClient.Search.WithBody(bufio.NewReader(bytes.NewReader(dataBytes))),
 		e.esClient.Search.WithPretty(),
 		e.esClient.Search.WithHuman(),
-		e.esClient.Search.WithTimeout(5*time.Second),
+		e.esClient.Search.WithTimeout(searchTimeout),
 		e.esClient.Search.WithSize(pagination.GetSize()),
 		e.esClient.Search.WithFrom(pagination.GetOffset()),
 	)
