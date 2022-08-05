@@ -1,8 +1,11 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/utils"
+)
 
 type ProductUseCase interface {
 	Index(ctx context.Context, product Product) error
-	Search(ctx context.Context, term string) (any, error)
+	Search(ctx context.Context, term string, pagination *utils.Pagination) (*ProductSearchResponse, error)
 }

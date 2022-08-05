@@ -150,7 +150,6 @@ func (a *app) Run() error {
 			cancel()
 		}
 	}()
-	//rabbitmq.ConsumeQueue(ctx, a.amqpChan, 10, a.cfg.ExchangeAndQueueBindings.IndexProductBinding.QueueName, "consumerA", productConsumer.ConsumeDeliveriesB)
 
 	a.amqpPublisher, err = rabbitmq.NewPublisher(a.cfg.RabbitMQ, a.log)
 	if err != nil {
