@@ -3,9 +3,11 @@ package tracing
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/rabbitmq/amqp091-go"
 	"github.com/segmentio/kafka-go"
 	"google.golang.org/grpc/metadata"
 )
@@ -66,6 +68,22 @@ func StartKafkaConsumerTracerSpan(ctx context.Context, headers []kafka.Header, o
 	return ctx, serverSpan
 }
 
+func StartRabbitConsumerTracerSpan(ctx context.Context, headers amqp091.Table, operationName string) (context.Context, opentracing.Span) {
+	carrierFromRabbitHeaders := TextMapCarrierFromRabbitMessageHeaders(headers)
+
+	spanCtx, err := opentracing.GlobalTracer().Extract(opentracing.TextMap, carrierFromRabbitHeaders)
+	if err != nil {
+		serverSpan := opentracing.GlobalTracer().StartSpan(operationName)
+		ctx = opentracing.ContextWithSpan(ctx, serverSpan)
+		return ctx, serverSpan
+	}
+
+	serverSpan := opentracing.GlobalTracer().StartSpan(operationName, ext.RPCServerOption(spanCtx))
+	ctx = opentracing.ContextWithSpan(ctx, serverSpan)
+
+	return ctx, serverSpan
+}
+
 func TextMapCarrierToKafkaMessageHeaders(textMap opentracing.TextMapCarrier) []kafka.Header {
 	headers := make([]kafka.Header, 0, len(textMap))
 
@@ -86,6 +104,14 @@ func TextMapCarrierFromKafkaMessageHeaders(headers []kafka.Header) opentracing.T
 	textMap := make(map[string]string, len(headers))
 	for _, header := range headers {
 		textMap[header.Key] = string(header.Value)
+	}
+	return opentracing.TextMapCarrier(textMap)
+}
+
+func TextMapCarrierFromRabbitMessageHeaders(headers map[string]any) opentracing.TextMapCarrier {
+	textMap := make(map[string]string, len(headers))
+	for key, value := range headers {
+		textMap[key] = fmt.Sprintf("%v", value)
 	}
 	return opentracing.TextMapCarrier(textMap)
 }
