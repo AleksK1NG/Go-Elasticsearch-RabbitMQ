@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elastic
+  labels:
+    app: elastic
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: elastic
+      labels:
+        app: elastic
+    spec:
+      containers:
+        - name: elastic
+          image: docker.elastic.co/elasticsearch/elasticsearch:8.2.3
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: node.name
+              value: node01
+            - name: cluster.name
+              value: es-cluster-8
+            - name: discovery.type
+              value: single-node
+            - name: xpack.license.self_generated.type
+              value: basic
+            - name: xpack.security.enabled
+              value: "false"
+            - name: ES_JAVA_OPTS
+              value: "-Xms512m -Xmx512m"
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: elastic
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elastic
+spec:
+  selector:
+    app: elastic
+  ports:
+    - port: 9200
+      name: http
+    - port: 9300
+      name: http2
+  type: NodePort
