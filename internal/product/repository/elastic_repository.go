@@ -9,6 +9,7 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/misstype_manager"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/serializer"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/utils"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/opentracing/opentracing-go"
@@ -38,7 +39,7 @@ func (e *esRepository) Index(ctx context.Context, product domain.Product) error 
 	defer span.Finish()
 	span.LogFields(log.Object("product", product))
 
-	dataBytes, err := json.Marshal(&product)
+	dataBytes, err := serializer.Marshal(&product)
 	if err != nil {
 		return errors.Wrap(err, "json.Marshal")
 	}
@@ -90,7 +91,7 @@ func (e *esRepository) Search(ctx context.Context, term string, pagination *util
 		},
 	}
 
-	dataBytes, err := json.Marshal(&shouldQuery)
+	dataBytes, err := serializer.Marshal(&shouldQuery)
 	if err != nil {
 		return nil, err
 	}

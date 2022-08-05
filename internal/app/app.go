@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/AleksK1NG/go-elasticsearch/config"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/repository"
@@ -15,6 +14,7 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/pkg/middlewares"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/misstype_manager"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/rabbitmq"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/serializer"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-playground/validator"
@@ -265,7 +265,7 @@ func (a *app) loadKeysMappings() (*misstype_manager.KeyboardMissTypeManager, err
 	a.log.Infof("keys mappings: %s", string(keysJsonBytes))
 
 	keyMappings := map[string]string{}
-	if err := json.Unmarshal(keysJsonBytes, &keyMappings); err != nil {
+	if err := serializer.Unmarshal(keysJsonBytes, &keyMappings); err != nil {
 		return nil, err
 	}
 	a.log.Infof("keys mappings data: %+v", keyMappings)
