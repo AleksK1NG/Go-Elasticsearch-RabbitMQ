@@ -7,8 +7,10 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/domain"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/serializer"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esutil"
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"time"
@@ -61,22 +63,28 @@ func (c *consumer) ConsumeIndexDeliveries(ctx context.Context, deliveries <-chan
 }
 
 func (c *consumer) indexProduct(ctx context.Context, msg amqp.Delivery) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "consumer.indexProduct")
+	defer span.Finish()
+
 	var product domain.Product
 	if err := serializer.Unmarshal(msg.Body, &product); err != nil {
-		c.log.Errorf("indexProduct serializer.Unmarshal <<<Reject>>> err: %v", err)
+		c.log.Errorf("indexProduct serializer.Unmarshal <<<Reject>>> err: %v", tracing.TraceWithErr(span, err))
 		return msg.Reject(true)
 	}
 	if err := c.productUseCase.Index(ctx, product); err != nil {
-		c.log.Errorf("indexProduct productUseCase.Index <<<Reject>>> err: %v", err)
+		c.log.Errorf("indexProduct productUseCase.Index <<<Reject>>> err: %v", tracing.TraceWithErr(span, err))
 		return msg.Reject(true)
 	}
 	return msg.Ack(true)
 }
 
 func (c *consumer) bulkIndexProduct(ctx context.Context, msg amqp.Delivery) error {
+	ctx, span := tracing.StartRabbitConsumerTracerSpan(ctx, msg.Headers, "consumer.bulkIndexProduct")
+	defer span.Finish()
+
 	var product domain.Product
 	if err := serializer.Unmarshal(msg.Body, &product); err != nil {
-		c.log.Errorf("indexProduct serializer.Unmarshal <<<Reject>>> err: %v", err)
+		c.log.Errorf("indexProduct serializer.Unmarshal <<<Reject>>> err: %v", tracing.TraceWithErr(span, err))
 		return msg.Reject(true)
 	}
 
@@ -94,7 +102,7 @@ func (c *consumer) bulkIndexProduct(ctx context.Context, msg amqp.Delivery) erro
 			}
 		},
 	}); err != nil {
-		c.log.Errorf("indexProduct bulkIndexer.Add <<<Reject>>> err: %v", err)
+		c.log.Errorf("indexProduct bulkIndexer.Add <<<Reject>>> err: %v", tracing.TraceWithErr(span, err))
 		return msg.Reject(true)
 	}
 

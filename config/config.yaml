@@ -21,18 +21,9 @@ logger:
   level: info
   devMode: false
   encoder: console
-kafka:
-  brokers: [ "localhost:9093" ]
-  groupID: bank_account_microservice_consumer
-  initTopics: true
-kafkaTopics:
-  eventCreated:
-    topicName: event_created
-    partitions: 10
-    replicationFactor: 1
 jaeger:
   enable: true
-  serviceName: bank_account_service
+  serviceName: search_service
   hostPort: "localhost:6831"
   logSpans: false
 timeouts:
