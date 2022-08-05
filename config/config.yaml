@@ -50,3 +50,10 @@ exchangeAndQueueBindings:
     bindingKey: products-index
     concurrency: 10
     consumer: products-consumer
+bulkIndexer:
+  numWorkers: 10
+  flushBytes: 20000000
+  flushIntervalSeconds: 15
+  timeoutMilliseconds: 5000
+
+
