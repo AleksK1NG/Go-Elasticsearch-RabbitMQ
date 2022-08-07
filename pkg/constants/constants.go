@@ -5,7 +5,7 @@ const (
 	HttpPort          = "HTTP_PORT"
 	ConfigPath        = "CONFIG_PATH"
 	KafkaBrokers      = "KAFKA_BROKERS"
-	JaegerHostPort    = "JAEGER_HOST"
+	JaegerHostPort    = "JAEGER_HOST_PORT"
 	RedisAddr         = "REDIS_ADDR"
 	MongoDbURI        = "MONGO_URI"
 	PostgresqlHost    = "POSTGRES_HOST"

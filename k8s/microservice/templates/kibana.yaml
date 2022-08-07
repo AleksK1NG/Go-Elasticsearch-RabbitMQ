@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: kibana
-          image: docker.elastic.co/kibana/kibana:8.2.3
+          image: kibana:8.3.3
           imagePullPolicy: IfNotPresent
           env:
             - name: ELASTICSEARCH_HOSTS

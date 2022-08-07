@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: elastic
-          image: docker.elastic.co/elasticsearch/elasticsearch:8.2.3
+          image: elasticsearch:8.3.3
           imagePullPolicy: IfNotPresent
           env:
             - name: node.name

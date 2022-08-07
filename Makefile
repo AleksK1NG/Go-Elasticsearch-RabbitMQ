@@ -19,6 +19,9 @@ develop:
 	@echo Starting local docker compose
 	docker-compose -f docker-compose.yaml up -d --build
 
+upload:
+	docker build -t alexanderbryksin/search_microservice:latest -f ./Dockerfile .
+	docker push alexanderbryksin/search_microservice:latest
 
 # ==============================================================================
 # Docker support
@@ -40,7 +43,19 @@ logs-local:
 # k8s support
 
 helm_install:
-	helm install -f microservice/values.yaml microservice microservice
+	helm install -f k8s/microservice/values.yaml search k8s/microservice
 
 helm_uninstall:
 	helm uninstall microservice
+
+dry_run:
+	kubectl apply --dry-run=client -f k8s/microservice/templates/microservice.yaml
+
+port_forward_microservice:
+	kubectl port-forward services/microservice 8000:8000
+
+port_forward_kibana:
+	kubectl port-forward services/kibana 5601:5601
+
+port_forward_rabbitmq:
+	kubectl port-forward services/rabbitmq 15672:15672

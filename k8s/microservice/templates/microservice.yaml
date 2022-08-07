@@ -14,15 +14,15 @@ spec:
     spec:
       containers:
         - name: microservice
-          image: docherhub/microservice
+          image: alexanderbryksin/search_microservice:latest
           imagePullPolicy: IfNotPresent
           env:
-            - name: JAEGER_HOST
-              value: jaeger
+            - name: JAEGER_HOST_PORT
+              value: jaeger:6831
             - name: ELASTIC_URL
               value: http://elastic:9200
             - name: RABBITMQ_URI
-              value: amqp://guest:guest@rabbit:5672/
+              value: amqp://guest:guest@rabbitmq:5672/
       restartPolicy: Always
   selector:
     matchLabels:
