@@ -1,0 +1,117 @@
+version: "3.9"
+
+services:
+  microservice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: search_microservice
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - JAEGER_HOST=host.docker.internal:6831
+      - ELASTIC_URL=http://host.docker.internal:9200
+      - RABBITMQ_URI=amqp://guest:guest@host.docker.internal:5672/
+    depends_on:
+      - node01
+      - grafana
+      - rabbitmq
+      - jaeger
+      - node_exporter
+      - prometheus
+    networks: [ "microservices" ]
+
+  rabbitmq:
+    image: rabbitmq:3.9-management-alpine
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks: [ "microservices" ]
+
+  node01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.2.3
+    container_name: node01
+    restart: always
+    environment:
+      - node.name=node01
+      - cluster.name=es-cluster-8
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.license.self_generated.type=basic
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./es-data01:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks: [ "microservices" ]
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.2.3
+    restart: always
+    environment:
+      ELASTICSEARCH_HOSTS: http://node01:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - node01
+    networks: [ "microservices" ]
+
+  jaeger:
+    container_name: jaeger_container
+    restart: always
+    image: jaegertracing/all-in-one:1.35
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+      - "9411:9411"
+    networks: [ "microservices" ]
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks: [ "microservices" ]
+
+  node_exporter:
+    container_name: node_exporter_container
+    restart: always
+    image: prom/node-exporter
+    ports:
+      - '9101:9100'
+    networks: [ "microservices" ]
+
+  grafana:
+    container_name: grafana_container
+    restart: always
+    image: grafana/grafana
+    ports:
+      - '3005:3000'
+    networks: [ "microservices" ]
+
+volumes:
+  es-data01:
+    driver: local
+
+networks:
+  microservices:
+    name: microservices

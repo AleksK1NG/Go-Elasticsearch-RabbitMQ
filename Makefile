@@ -34,3 +34,13 @@ clean:
 
 logs-local:
 	docker logs -f $(FILES)
+
+
+# ==============================================================================
+# k8s support
+
+helm_install:
+	helm install -f microservice/values.yaml microservice microservice
+
+helm_uninstall:
+	helm uninstall microservice
