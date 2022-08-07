@@ -113,5 +113,10 @@ func InitConfig() (*Config, error) {
 		cfg.ElasticSearch.Addresses = []string{elasticUrl}
 	}
 
+	rabbitURI := os.Getenv(constants.RabbitMQ_URI)
+	if elasticUrl != "" {
+		cfg.RabbitMQ.URI = rabbitURI
+	}
+
 	return cfg, nil
 }

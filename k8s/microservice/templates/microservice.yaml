@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: microservice
+  labels:
+    app: microservice
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: microservice
+      labels:
+        app: microservice
+    spec:
+      containers:
+        - name: microservice
+          image: docherhub/microservice
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JAEGER_HOST
+              value: jaeger
+            - name: ELASTIC_URL
+              value: http://elastic:9200
+            - name: RABBITMQ_URI
+              value: amqp://guest:guest@rabbit:5672/
+      restartPolicy: Always
+  selector:
+    matchLabels:
+      app: microservice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: microservice
+spec:
+  selector:
+    app: microservice
+  ports:
+    - name: microservice-port
+      port: 8000
+      protocol: TCP
+  type: LoadBalancer
