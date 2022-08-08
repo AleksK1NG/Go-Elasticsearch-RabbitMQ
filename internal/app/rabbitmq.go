@@ -52,3 +52,26 @@ func (a *app) closeRabbitConn() {
 		a.log.Errorf("amqpConn.Close err: %v", err)
 	}
 }
+
+func (a *app) initRabbitMQPublisher(ctx context.Context) error {
+	retryOptions := []retry.Option{
+		retry.Attempts(5),
+		retry.Delay(time.Duration(1500) * time.Millisecond),
+		retry.DelayType(retry.BackOffDelay),
+		retry.LastErrorOnly(true),
+		retry.Context(ctx),
+		retry.OnRetry(func(n uint, err error) {
+			a.log.Errorf("retry connect rabbitmq publisher err: %v", err)
+		}),
+	}
+
+	return retry.Do(func() error {
+		amqpPublisher, err := rabbitmq.NewPublisher(a.cfg.RabbitMQ, a.log)
+		if err != nil {
+			return err
+		}
+		a.amqpPublisher = amqpPublisher
+		return nil
+
+	}, retryOptions...)
+}
