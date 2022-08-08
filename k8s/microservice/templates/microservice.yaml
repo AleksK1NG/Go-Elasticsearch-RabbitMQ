@@ -5,7 +5,7 @@ metadata:
   labels:
     app: microservice
 spec:
-  replicas: 1
+  replicas: 3
   template:
     metadata:
       name: microservice

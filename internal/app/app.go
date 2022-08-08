@@ -101,6 +101,12 @@ func (a *app) Run() error {
 	}
 	a.log.Infof("rabbitmq queue created: %+v for binding: %+v", queue, a.cfg.ExchangeAndQueueBindings.IndexProductBinding)
 
+	a.amqpPublisher, err = rabbitmq.NewPublisher(a.cfg.RabbitMQ, a.log)
+	if err != nil {
+		return err
+	}
+	defer a.amqpPublisher.Close()
+
 	elasticSearchClient, err := elastic.NewElasticSearchClient(a.cfg.ElasticSearch)
 	if err != nil {
 		return err
@@ -119,7 +125,7 @@ func (a *app) Run() error {
 	}
 
 	elasticRepository := repository.NewEsRepository(a.log, a.cfg, a.elasticClient, a.missTypeManager)
-	productUseCase := usecase.NewProductUseCase(a.log, a.cfg, elasticRepository)
+	productUseCase := usecase.NewProductUseCase(a.log, a.cfg, elasticRepository, a.amqpPublisher)
 	productController := v1.NewProductController(a.log, a.cfg, productUseCase, a.echo.Group(a.cfg.Http.ProductsPath), a.validate)
 	productController.MapRoutes()
 
@@ -151,12 +157,6 @@ func (a *app) Run() error {
 			cancel()
 		}
 	}()
-
-	a.amqpPublisher, err = rabbitmq.NewPublisher(a.cfg.RabbitMQ, a.log)
-	if err != nil {
-		return err
-	}
-	defer a.amqpPublisher.Close()
 
 	a.runMetrics(cancel)
 
