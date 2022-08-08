@@ -8,7 +8,6 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/transport/http/v1"
 	productRabbitConsumer "github.com/AleksK1NG/go-elasticsearch/internal/product/transport/rabbitmq"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/usecase"
-	"github.com/AleksK1NG/go-elasticsearch/pkg/elastic"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/middlewares"
@@ -57,11 +56,9 @@ func (a *app) Run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
 
-	missTypeManager, err := a.loadKeysMappings()
-	if err != nil {
+	if err := a.loadKeyMappings(); err != nil {
 		return err
 	}
-	a.missTypeManager = missTypeManager
 
 	// enable tracing
 	if a.cfg.Jaeger.Enable {
@@ -75,25 +72,10 @@ func (a *app) Run() error {
 
 	a.middlewareManager = middlewares.NewMiddlewareManager(a.log, a.cfg, a.getHttpMetricsCb())
 
-	amqpConn, err := rabbitmq.NewRabbitMQConnection(a.cfg.RabbitMQ)
-	if err != nil {
+	if err := a.initRabbitMQ(ctx); err != nil {
 		return err
 	}
-	defer amqpConn.Close()
-	a.amqpConn = amqpConn
-
-	amqpChan, err := amqpConn.Channel()
-	if err != nil {
-		return err
-	}
-	defer amqpChan.Close()
-	a.amqpChan = amqpChan
-
-	if err := a.amqpChan.Qos(1, 0, true); err != nil {
-		return err
-	}
-
-	a.log.Infof("rabbitmq connected: %+v", a.amqpConn)
+	defer a.closeRabbitConn()
 
 	queue, err := rabbitmq.DeclareBinding(ctx, a.amqpChan, a.cfg.ExchangeAndQueueBindings.IndexProductBinding)
 	if err != nil {
@@ -107,11 +89,9 @@ func (a *app) Run() error {
 	}
 	defer a.amqpPublisher.Close()
 
-	elasticSearchClient, err := elastic.NewElasticSearchClient(a.cfg.ElasticSearch)
-	if err != nil {
+	if err := a.initElasticsearchClient(ctx); err != nil {
 		return err
 	}
-	a.elasticClient = elasticSearchClient
 
 	// connect elastic
 	elasticInfoResponse, err := esclient.Info(ctx, a.elasticClient)

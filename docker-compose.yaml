@@ -9,6 +9,7 @@ services:
     restart: always
     ports:
       - "8000:8000"
+      - "3001:3001"
     environment:
       - JAEGER_HOST_PORT=host.docker.internal:6831
       - ELASTIC_URL=http://host.docker.internal:9200

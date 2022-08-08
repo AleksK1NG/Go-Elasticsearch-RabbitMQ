@@ -19,6 +19,13 @@ spec:
           env:
             - name: COLLECTOR_ZIPKIN_HTTP_PORT
               value: "9411"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "300m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
       restartPolicy: Always
   selector:
     matchLabels:

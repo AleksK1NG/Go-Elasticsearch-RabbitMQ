@@ -16,6 +16,13 @@ spec:
         - name: elastic
           image: elasticsearch:8.3.3
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "300m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
           env:
             - name: node.name
               value: node01

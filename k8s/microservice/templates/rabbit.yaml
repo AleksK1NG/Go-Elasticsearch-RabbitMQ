@@ -16,6 +16,13 @@ spec:
         - name: rabbitmq
           image: rabbitmq:3.9-management-alpine
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "300m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
       restartPolicy: Always
   selector:
     matchLabels:
