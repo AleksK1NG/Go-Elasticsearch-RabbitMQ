@@ -49,7 +49,7 @@ helm_uninstall:
 	helm uninstall microservice
 
 dry_run:
-	kubectl apply --dry-run=client -f k8s/microservice/templates/microservice.yaml
+	kubectl apply --dry-run=client -f k8s/microservice/templates/servicemonitor.yaml
 
 port_forward_microservice:
 	kubectl port-forward services/microservice 8000:8000
@@ -59,3 +59,13 @@ port_forward_kibana:
 
 port_forward_rabbitmq:
 	kubectl port-forward services/rabbitmq 15672:15672
+
+port_forward_prometheus:
+	kubectl port-forward services/prometheus-kube-prometheus-prometheus 9090:9090
+
+minikube_start:
+	minikube start --memory 16000 --cpus 4
+
+
+prometheus_install:
+	helm install prometheus prometheus-community/kube-prometheus-stack

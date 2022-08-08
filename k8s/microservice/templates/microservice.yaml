@@ -5,7 +5,7 @@ metadata:
   labels:
     app: microservice
 spec:
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       name: microservice
@@ -16,6 +16,25 @@ spec:
         - name: microservice
           image: alexanderbryksin/search_microservice:latest
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "300m"
+            limits:
+              memory: "1000Mi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds: 10
           env:
             - name: JAEGER_HOST_PORT
               value: jaeger:6831
@@ -24,6 +43,8 @@ spec:
             - name: RABBITMQ_URI
               value: amqp://guest:guest@rabbitmq:5672/
       restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
   selector:
     matchLabels:
       app: microservice
@@ -31,12 +52,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: microservice
+  name: microservice-service
 spec:
+  type: LoadBalancer
   selector:
     app: microservice
   ports:
     - name: microservice-port
       port: 8000
       protocol: TCP
-  type: LoadBalancer
+    - name: microservice-metrics
+      port: 3001
+      protocol: TCP
+      targetPort: 3001
