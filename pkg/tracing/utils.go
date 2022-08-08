@@ -150,6 +150,28 @@ func ExtractTextMapCarrier(spanCtx opentracing.SpanContext) opentracing.TextMapC
 	return textMapCarrier
 }
 
+func ExtractTextMapCarrierHeaders(spanCtx opentracing.SpanContext) map[string]string {
+	textMapCarrier, err := InjectTextMapCarrier(spanCtx)
+	if err != nil {
+		return make(opentracing.TextMapCarrier)
+	}
+	return textMapCarrier
+}
+
+func ExtractTextMapCarrierHeadersToAmqpTable(spanCtx opentracing.SpanContext) amqp091.Table {
+	textMapCarrier, err := InjectTextMapCarrier(spanCtx)
+	if err != nil {
+		return make(amqp091.Table)
+	}
+
+	amqpTable := make(amqp091.Table, len(textMapCarrier))
+	for key, value := range textMapCarrier {
+		amqpTable[key] = value
+	}
+
+	return amqpTable
+}
+
 func ExtractTextMapCarrierBytes(spanCtx opentracing.SpanContext) []byte {
 	textMapCarrier, err := InjectTextMapCarrier(spanCtx)
 	if err != nil {

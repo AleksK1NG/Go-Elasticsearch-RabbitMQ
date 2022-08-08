@@ -32,6 +32,28 @@ func NewProductController(
 	return &productController{log: log, cfg: cfg, productUseCase: productUseCase, group: group, validate: validate}
 }
 
+func (h *productController) indexAsync() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		ctx, span := tracing.StartHttpServerTracerSpan(c, "productController.indexAsync")
+		defer span.Finish()
+
+		var product domain.Product
+		if err := c.Bind(&product); err != nil {
+			h.log.Errorf("(Bind) err: %v", tracing.TraceWithErr(span, err))
+			return httpErrors.ErrorCtxResponse(c, err, h.cfg.Http.DebugErrorsResponse)
+		}
+		product.ID = uuid.NewV4().String()
+
+		if err := h.productUseCase.IndexAsync(ctx, product); err != nil {
+			h.log.Errorf("(productUseCase.IndexAsync) err: %v", tracing.TraceWithErr(span, err))
+			return httpErrors.ErrorCtxResponse(c, err, h.cfg.Http.DebugErrorsResponse)
+		}
+
+		h.log.Infof("created product: %+v", product)
+		return c.JSON(http.StatusCreated, product)
+	}
+}
+
 func (h *productController) index() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx, span := tracing.StartHttpServerTracerSpan(c, "productController.index")
