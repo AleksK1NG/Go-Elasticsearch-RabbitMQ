@@ -83,8 +83,7 @@ func (a *app) Run() error {
 	}
 	a.log.Infof("rabbitmq queue created: %+v for binding: %+v", queue, a.cfg.ExchangeAndQueueBindings.IndexProductBinding)
 
-	a.amqpPublisher, err = rabbitmq.NewPublisher(a.cfg.RabbitMQ, a.log)
-	if err != nil {
+	if err := a.initRabbitMQPublisher(ctx); err != nil {
 		return err
 	}
 	defer a.amqpPublisher.Close()

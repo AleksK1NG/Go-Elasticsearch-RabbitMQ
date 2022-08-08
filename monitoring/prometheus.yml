@@ -13,4 +13,4 @@ scrape_configs:
 
   - job_name: 'search_microservice'
     static_configs:
-      - targets: [ 'host.docker.internal:8001' ]
+      - targets: [ 'host.docker.internal:3001' ]
