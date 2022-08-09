@@ -2,14 +2,17 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    release: search
-  name: search_microservice-service-monitor
+    release: monitoring
+  name: search-microservice-service-monitor
   namespace: default
 spec:
   selector:
     matchLabels:
       app: search-microservice
   endpoints:
-    - interval: 15s
+    - interval: 10s
       port: metrics
       path: /metrics
+  namespaceSelector:
+    matchNames:
+      - default
