@@ -9,6 +9,7 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.3.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-resty/resty/v2 v2.7.0
+	github.com/heptiolabs/healthcheck v0.0.0-20211123025425-613501dd5deb
 	github.com/json-iterator/go v1.1.12
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/opentracing/opentracing-go v1.2.0
@@ -70,6 +71,7 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
+	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect

@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: microservice
+  name: search_microservice
   labels:
-    app: microservice
+    app: search_microservice
 spec:
   replicas: 1
   template:
     metadata:
-      name: microservice
+      name: search_microservice
       labels:
-        app: microservice
+        app: search_microservice
     spec:
       containers:
-        - name: microservice
+        - name: search_microservice
           image: alexanderbryksin/search_microservice:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           resources:
             requests:
               memory: "256Mi"
@@ -35,6 +35,13 @@ spec:
               port: 3001
             initialDelaySeconds: 15
             periodSeconds: 10
+          ports:
+            - containerPort: 8000
+              name: http
+            - containerPort: 8001
+              name: metrics
+            - containerPort: 3001
+              name: healthcheck
           env:
             - name: JAEGER_HOST_PORT
               value: jaeger:6831
@@ -44,24 +51,29 @@ spec:
               value: amqp://guest:guest@rabbitmq:5672/
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
-
   selector:
     matchLabels:
-      app: microservice
+      app: search_microservice
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: microservice-service
+  name: search_microservice-service
+  labels:
+    app: search_microservice
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
-    app: microservice
+    app: search_microservice
   ports:
-    - name: microservice-port
+    - name: http
       port: 8000
       protocol: TCP
-    - name: microservice-metrics
+    - name: healthcheck
       port: 3001
       protocol: TCP
-      targetPort: 3001
+      targetPort: metrics
+    - name: metrics
+      port: 8001
+      protocol: TCP
+      targetPort: metrics
