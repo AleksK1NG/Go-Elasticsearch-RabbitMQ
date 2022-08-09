@@ -54,7 +54,7 @@ func (a *app) configureHealthCheckEndpoints(ctx context.Context, health healthch
 		return nil
 	}, time.Duration(a.cfg.Probes.CheckIntervalSeconds)*time.Second))
 
-	health.AddLivenessCheck("rabbitmq", healthcheck.AsyncWithContext(ctx, func() error {
+	health.AddLivenessCheck(constants.RabbitMQ, healthcheck.AsyncWithContext(ctx, func() error {
 		if a.amqpConn.IsClosed() || a.amqpChan.IsClosed() {
 			a.log.Warnf("(rabbitmq Liveness Check) err: %v", errors.New("amqp conn closed"))
 			return errors.New("amqp conn closed")
@@ -62,7 +62,7 @@ func (a *app) configureHealthCheckEndpoints(ctx context.Context, health healthch
 		return nil
 	}, time.Duration(a.cfg.Probes.CheckIntervalSeconds)*time.Second))
 
-	health.AddReadinessCheck("rabbitmq", healthcheck.AsyncWithContext(ctx, func() error {
+	health.AddReadinessCheck(constants.RabbitMQ, healthcheck.AsyncWithContext(ctx, func() error {
 		if a.amqpConn.IsClosed() || a.amqpChan.IsClosed() {
 			a.log.Warnf("(rabbitmq Readiness Check) err: %v", errors.New("amqp conn closed"))
 			return errors.New("amqp conn closed")

@@ -1,0 +1,21 @@
+version: '3.9'
+
+services:
+  docker-registry:
+    container_name: docker-registry
+    image: registry:latest
+    ports:
+      - "51178:51178"
+    restart: always
+    environment:
+      REGISTRY_HTTP_ADDR: 0.0.0.0:51178
+    volumes:
+      - ./volume:/var/lib/registry
+#  docker-registry-ui:
+#    container_name: docker-registry-ui
+#    image: konradkleine/docker-registry-frontend:latest
+#    ports:
+#      - "8085:80"
+#    environment:
+#      ENV_DOCKER_REGISTRY_HOST: docker-registry
+#      ENV_DOCKER_REGISTRY_PORT: 51178
