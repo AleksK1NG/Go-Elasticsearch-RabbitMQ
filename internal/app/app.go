@@ -22,6 +22,7 @@ import (
 	"github.com/pkg/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -46,6 +47,7 @@ type app struct {
 	amqpPublisher     rabbitmq.AmqpPublisher
 	missTypeManager   misstype_manager.MissTypeManager
 	metricsServer     *echo.Echo
+	healthCheckServer *http.Server
 }
 
 func NewApp(log logger.Logger, cfg *config.Config) *app {
@@ -138,6 +140,7 @@ func (a *app) Run() error {
 	}()
 
 	a.runMetrics(cancel)
+	a.runHealthCheck(ctx)
 
 	<-ctx.Done()
 	a.waitShootDown(waitShotDownDuration)
@@ -147,6 +150,9 @@ func (a *app) Run() error {
 	}
 	if err := a.metricsServer.Shutdown(ctx); err != nil {
 		a.log.Warnf("(Shutdown) metricsServer err: %v", err)
+	}
+	if err := a.shutDownHealthCheckServer(ctx); err != nil {
+		a.log.Warnf("(shutDownHealthCheckServer) HealthCheckServer err: %v", err)
 	}
 
 	<-a.doneCh

@@ -18,10 +18,10 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             requests:
-              memory: "128Mi"
+              memory: "512Mi"
               cpu: "300m"
             limits:
-              memory: "512Mi"
+              memory: "1000Mi"
               cpu: "500m"
           env:
             - name: ELASTICSEARCH_HOSTS

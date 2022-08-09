@@ -46,13 +46,13 @@ helm_install:
 	helm install -f k8s/microservice/values.yaml search k8s/microservice
 
 helm_uninstall:
-	helm uninstall microservice
+	helm uninstall search
 
 dry_run:
 	kubectl apply --dry-run=client -f k8s/microservice/templates/servicemonitor.yaml
 
 port_forward_microservice:
-	kubectl port-forward services/microservice 8000:8000
+	kubectl port-forward services/microservice-service 8000:8000
 
 port_forward_kibana:
 	kubectl port-forward services/kibana 5601:5601
@@ -69,3 +69,6 @@ minikube_start:
 
 prometheus_install:
 	helm install prometheus prometheus-community/kube-prometheus-stack
+
+prometheus_install:
+	helm uninstall prometheus

@@ -21,8 +21,8 @@ spec:
               memory: "512Mi"
               cpu: "300m"
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "1500Mi"
+              cpu: "800m"
           env:
             - name: node.name
               value: node01
