@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: search_microservice
+  name: search-microservice
   labels:
-    app: search_microservice
+    app: search-microservice
 spec:
   replicas: 1
   template:
     metadata:
-      name: search_microservice
+      name: search-microservice
       labels:
-        app: search_microservice
+        app: search-microservice
     spec:
       containers:
-        - name: search_microservice
+        - name: search-microservice
           image: alexanderbryksin/search_microservice:latest
           imagePullPolicy: Always
           resources:
@@ -28,13 +28,13 @@ spec:
               path: /live
               port: 3001
             initialDelaySeconds: 15
-            periodSeconds: 10
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /ready
               port: 3001
             initialDelaySeconds: 15
-            periodSeconds: 10
+            periodSeconds: 5
           ports:
             - containerPort: 8000
               name: http
@@ -53,18 +53,20 @@ spec:
       terminationGracePeriodSeconds: 30
   selector:
     matchLabels:
-      app: search_microservice
+      app: search-microservice
+
 ---
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: search_microservice-service
+  name: search-microservice-service
   labels:
-    app: search_microservice
+    app: search-microservice
 spec:
   type: ClusterIP
   selector:
-    app: search_microservice
+    app: search-microservice
   ports:
     - name: http
       port: 8000

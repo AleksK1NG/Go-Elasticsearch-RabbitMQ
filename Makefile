@@ -3,6 +3,10 @@
 # ==============================================================================
 # Docker
 
+registry:
+	@echo Starting local docker regestry
+	docker-compose -f registry.yaml up -d --build
+
 local:
 	@echo Clearing elasticserach data
 	rm -rf ./es-data01
@@ -70,5 +74,5 @@ minikube_start:
 prometheus_install:
 	helm install prometheus prometheus-community/kube-prometheus-stack
 
-prometheus_install:
+prometheus_uninstall:
 	helm uninstall prometheus

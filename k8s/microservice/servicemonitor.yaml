@@ -8,7 +8,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: search_microservice
+      app: search-microservice
   endpoints:
     - interval: 15s
       port: metrics

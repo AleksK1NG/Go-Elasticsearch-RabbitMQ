@@ -8,3 +8,4 @@ grafana
 microservices_pgdata
 es-data01
 main
+volume

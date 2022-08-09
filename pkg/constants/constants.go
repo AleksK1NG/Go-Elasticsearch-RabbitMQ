@@ -23,6 +23,7 @@ const (
 	Postgres      = "postgres"
 	MongoDB       = "mongo"
 	ElasticSearch = "elasticSearch"
+	RabbitMQ      = "RabbitMQ"
 
 	GRPC     = "GRPC"
 	SIZE     = "SIZE"
