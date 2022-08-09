@@ -45,6 +45,15 @@ logs-local:
 
 # ==============================================================================
 # k8s support
+# install helm chart
+# install monitoring
+# apply search service monitor
+
+install_all:
+	helm install -f k8s/microservice/values.yaml search k8s/microservice
+	kubectl create namespace monitoring
+	helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring
+	kubectl apply -f k8s/microservice/servicemonitor.yaml
 
 helm_install:
 	helm install -f k8s/microservice/values.yaml search k8s/microservice
@@ -65,14 +74,21 @@ port_forward_rabbitmq:
 	kubectl port-forward services/rabbitmq 15672:15672
 
 port_forward_prometheus:
-	kubectl port-forward services/prometheus-kube-prometheus-prometheus 9090:9090
+	kubectl port-forward services/monitoring-kube-prometheus-prometheus 9090:9090
 
 minikube_start:
 	minikube start --memory 16000 --cpus 4
 
+monitoring_install:
+	kubectl create namespace monitoring
+	helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring
 
-prometheus_install:
-	helm install prometheus prometheus-community/kube-prometheus-stack
-
-prometheus_uninstall:
+monitoring_uninstall:
 	helm uninstall prometheus
+
+port_forward_search_service_monitor:
+	kubens monitoring
+	kubectl port-forward services/monitoring-kube-prometheus-prometheus 9090:9090
+
+apply_search_service_monitor:
+	kubectl apply -f k8s/microservice/servicemonitor.yaml
