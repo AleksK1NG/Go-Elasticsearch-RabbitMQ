@@ -25,7 +25,7 @@ func TestIndexAsync(t *testing.T) {
 		product := domain.Product{
 			ID:           uuid.NewV4().String(),
 			Title:        gofakeit.Breakfast(),
-			Description:  gofakeit.LoremIpsumSentence(50),
+			Description:  gofakeit.LoremIpsumSentence(60),
 			ImageURL:     gofakeit.URL(),
 			CountInStock: gofakeit.Int64(),
 			Shop:         gofakeit.Company(),
