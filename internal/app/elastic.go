@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/elastic"
 	"github.com/avast/retry-go"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -22,7 +23,7 @@ func (a *app) initElasticsearchClient(ctx context.Context) error {
 	return retry.Do(func() error {
 		elasticSearchClient, err := elastic.NewElasticSearchClient(a.cfg.ElasticSearch)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "NewElasticSearchClient")
 		}
 		a.elasticClient = elasticSearchClient
 		return nil

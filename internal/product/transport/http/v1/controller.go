@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/AleksK1NG/go-elasticsearch/config"
+	"github.com/AleksK1NG/go-elasticsearch/internal/metrics"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/domain"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/constants"
 	httpErrors "github.com/AleksK1NG/go-elasticsearch/pkg/http_errors"
@@ -20,6 +21,7 @@ type productController struct {
 	productUseCase domain.ProductUseCase
 	group          *echo.Group
 	validate       *validator.Validate
+	metrics        *metrics.SearchMicroserviceMetrics
 }
 
 func NewProductController(
@@ -28,8 +30,9 @@ func NewProductController(
 	productUseCase domain.ProductUseCase,
 	group *echo.Group,
 	validate *validator.Validate,
+	metrics *metrics.SearchMicroserviceMetrics,
 ) *productController {
-	return &productController{log: log, cfg: cfg, productUseCase: productUseCase, group: group, validate: validate}
+	return &productController{log: log, cfg: cfg, productUseCase: productUseCase, group: group, validate: validate, metrics: metrics}
 }
 
 func (h *productController) indexAsync() echo.HandlerFunc {
@@ -50,6 +53,7 @@ func (h *productController) indexAsync() echo.HandlerFunc {
 		}
 
 		h.log.Infof("created product: %+v", product)
+		h.metrics.HttpSuccessIndexAsyncRequests.Inc()
 		return c.JSON(http.StatusCreated, product)
 	}
 }
@@ -72,6 +76,7 @@ func (h *productController) index() echo.HandlerFunc {
 		}
 
 		h.log.Infof("created product: %+v", product)
+		h.metrics.HttpSuccessIndexRequests.Inc()
 		return c.JSON(http.StatusCreated, product)
 	}
 }
@@ -90,6 +95,7 @@ func (h *productController) search() echo.HandlerFunc {
 		}
 
 		h.log.Infof("search result: %+v", searchResult)
+		h.metrics.HttpSuccessSearchRequests.Inc()
 		return c.JSON(http.StatusOK, searchResult)
 	}
 }

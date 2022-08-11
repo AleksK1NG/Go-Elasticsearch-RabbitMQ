@@ -105,7 +105,7 @@ func (a *app) Run() error {
 
 	elasticRepository := repository.NewEsRepository(a.log, a.cfg, a.elasticClient, a.missTypeManager)
 	productUseCase := usecase.NewProductUseCase(a.log, a.cfg, elasticRepository, a.amqpPublisher)
-	productController := v1.NewProductController(a.log, a.cfg, productUseCase, a.echo.Group(a.cfg.Http.ProductsPath), a.validate)
+	productController := v1.NewProductController(a.log, a.cfg, productUseCase, a.echo.Group(a.cfg.Http.ProductsPath), a.validate, a.metrics)
 	productController.MapRoutes()
 
 	go func() {
@@ -116,7 +116,7 @@ func (a *app) Run() error {
 	}()
 	a.log.Infof("%s is listening on PORT: %v", GetMicroserviceName(a.cfg), a.cfg.Http.Port)
 
-	productConsumer := productRabbitConsumer.NewConsumer(a.log, a.cfg, a.amqpConn, a.amqpChan, productUseCase, a.elasticClient)
+	productConsumer := productRabbitConsumer.NewConsumer(a.log, a.cfg, a.amqpConn, a.amqpChan, productUseCase, a.elasticClient, a.metrics)
 	if err := productConsumer.InitBulkIndexer(); err != nil {
 		a.log.Errorf("(InitBulkIndexer) err: %v", err)
 		cancel()

@@ -2,7 +2,6 @@ package v1
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/domain"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/http_client"
 	"github.com/brianvoe/gofakeit/v6"
@@ -79,11 +78,4 @@ func TestIndexProduct(t *testing.T) {
 	require.False(t, response.IsError())
 	require.True(t, response.IsSuccess())
 	require.Equal(t, response.StatusCode(), http.StatusCreated)
-
-	var id string
-	err = json.Unmarshal(response.Body(), &id)
-	require.NoError(t, err)
-	require.NotEmpty(t, id)
-
-	t.Logf("response: %s", response.String())
 }

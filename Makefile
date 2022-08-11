@@ -3,10 +3,6 @@
 # ==============================================================================
 # Docker
 
-registry:
-	@echo Starting local docker regestry
-	docker-compose -f registry.yaml up -d --build
-
 local:
 	@echo Clearing elasticserach data
 	rm -rf ./es-data01
