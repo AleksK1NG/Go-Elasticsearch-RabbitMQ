@@ -1,0 +1,342 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.searchMicroserviceName }}
+  labels:
+    app: {{ .Values.searchMicroserviceName }}
+spec:
+  replicas: {{ .Values.searchMicroserviceReplicas }}
+  template:
+    metadata:
+      name: {{ .Values.searchMicroserviceName }}
+      labels:
+        app: {{ .Values.searchMicroserviceName }}
+    spec:
+      containers:
+        - name: {{ .Values.searchMicroserviceName }}
+          image: {{.Values.searchMicroserviceImage }}
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "300m"
+            limits:
+              memory: "1000Mi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: {{.Values.searchMicroserviceLivenessProbePath }}
+              port: {{.Values.searchMicroserviceLivenessProbePort }}
+            initialDelaySeconds: {{ .Values.searchMicroserviceInitialDelaySeconds }}
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: {{.Values.searchMicroserviceReadinessProbePath }}
+              port: {{.Values.searchMicroserviceReadinessProbePort }}
+            initialDelaySeconds: {{ .Values.searchMicroserviceInitialDelaySeconds }}
+            periodSeconds: 5
+          ports:
+            - containerPort: {{.Values.searchMicroserviceHttpPort }}
+              name: http
+            - containerPort: {{.Values.searchMicroserviceMetricsPort }}
+              name: metrics
+            - containerPort: {{.Values.searchMicroserviceHealthcheckPort }}
+              name: healthcheck
+          env:
+            - name: JAEGER_HOST_PORT
+              value: {{ .Values.jaegerHotPost }}
+            - name: ELASTIC_URL
+              value: {{ .Values.elasticSearchURL }}
+            - name: RABBITMQ_URI
+              value: {{ .Values.rabbitMqURI }}
+            - name: CONFIG_PATH
+              value: "/search-config/search-config.yaml"
+          volumeMounts:
+            - name: config
+              mountPath: "/search-config"
+{{/*            - name: mappings*/}}
+{{/*              mountPath: "/config"*/}}
+{{/*            - name: translate*/}}
+{{/*              mountPath: "/config"*/}}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.searchMicroserviceName }}-config-map
+            items:
+              - key: search-config.yaml
+                path: search-config.yaml
+{{/*        - name: mappings*/}}
+{{/*          configMap:*/}}
+{{/*            name: {{ .Values.searchMicroserviceName }}-config-map-mappings-json*/}}
+{{/*            items:*/}}
+{{/*              - key: mappings.json*/}}
+{{/*                path: mappings.json*/}}
+{{/*        - name: translate*/}}
+{{/*          configMap:*/}}
+{{/*            name: {{ .Values.searchMicroserviceName }}-config-map-translate-json*/}}
+{{/*            items:*/}}
+{{/*              - key: translate.json*/}}
+{{/*                path: translate.json*/}}
+  selector:
+    matchLabels:
+      app: {{ .Values.searchMicroserviceName }}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: search-microservice-service
+  labels:
+    app: {{ .Values.searchMicroserviceName }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Values.searchMicroserviceName }}
+  ports:
+    - name: http
+      port: {{.Values.searchMicroserviceHttpPort }}
+      protocol: TCP
+    - name: healthcheck
+      port: {{.Values.searchMicroserviceHealthcheckPort }}
+      protocol: TCP
+      targetPort: metrics
+    - name: metrics
+      port: {{.Values.searchMicroserviceMetricsPort }}
+      protocol: TCP
+      targetPort: metrics
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    release: monitoring
+  name: search-microservice-service-monitor
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.searchMicroserviceName }}
+  endpoints:
+    - interval: 10s
+      port: metrics
+      path: /metrics
+  namespaceSelector:
+    matchNames:
+      - default
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.searchMicroserviceName }}-config-map
+data:
+  search-config.yaml: |
+    serviceName: search_service
+    grpc:
+      port: :5001
+      development: true
+    http:
+      port: :8000
+      development: true
+      basePath: /api/v1
+      productsPath: /api/v1/products
+      debugErrorsResponse: true
+      ignoreLogUrls: [ "metrics", "swagger" ]
+    probes:
+      readinessPath: /ready
+      livenessPath: /live
+      port: :3001
+      pprof: :6001
+      prometheusPath: /metrics
+      prometheusPort: :8001
+      checkIntervalSeconds: 10
+    logger:
+      level: debug
+      devMode: false
+      encoder: console
+    jaeger:
+      enable: true
+      serviceName: search_service
+      hostPort: {{ .Values.jaegerHotPost }}
+      logSpans: false
+    timeouts:
+      postgresInitMilliseconds: 1500
+      postgresInitRetryCount: 3
+    elasticSearch:
+      addresses: [ {{ .Values.elasticSearchURL }} ]
+      username: ""
+      password: ""
+      apiKey: ""
+      enableLogging: true
+    elasticIndexes:
+      products:
+        path: config/mappings.json
+        name: products
+        alias: products-alias
+    rabbitmq:
+      uri: {{ .Values.rabbitMqURI }}
+    exchangeAndQueueBindings:
+      indexProductBinding:
+        exchangeName: products
+        exchangeKind: direct
+        queueName: index-product
+        bindingKey: products-index
+        concurrency: 10
+        consumer: products-consumer
+    bulkIndexer:
+      numWorkers: 10
+      flushBytes: 20000000
+      flushIntervalSeconds: 15
+      timeoutMilliseconds: 5000
+
+
+
+
+{{/*---*/}}
+
+{{/*apiVersion: v1*/}}
+{{/*kind: ConfigMap*/}}
+{{/*metadata:*/}}
+{{/*  name: {{ .Values.searchMicroserviceName }}-config-map-mappings-json*/}}
+{{/*data:*/}}
+{{/*  mappings.json: |*/}}
+{{/*    {*/}}
+{{/*      "settings": {*/}}
+{{/*        "analysis": {*/}}
+{{/*          "analyzer": {*/}}
+{{/*            "autocomplete_analyzer": {*/}}
+{{/*              "type": "custom",*/}}
+{{/*              "tokenizer": "standard",*/}}
+{{/*              "filter": [*/}}
+{{/*                "name_synonym_filter",*/}}
+{{/*                "lowercase",*/}}
+{{/*                "remove_duplicates",*/}}
+{{/*                "ngram_filter"*/}}
+{{/*              ]*/}}
+{{/*            }*/}}
+{{/*          },*/}}
+{{/*          "filter": {*/}}
+{{/*            "ngram_filter": {*/}}
+{{/*              "type": "edge_ngram",*/}}
+{{/*              "min_gram": 1,*/}}
+{{/*              "max_gram": 20*/}}
+{{/*            },*/}}
+{{/*            "name_synonym_filter": {*/}}
+{{/*              "type": "synonym",*/}}
+{{/*              "synonyms": [*/}}
+{{/*                "Water, water, вода, Вода",*/}}
+{{/*                "Juice, juice, J7, сок, Сок",*/}}
+{{/*                "Apple, apple, яблоко, Яблоко",*/}}
+{{/*                "Orange, orange, Апельсинь, апельсин"*/}}
+{{/*              ]*/}}
+{{/*            }*/}}
+{{/*          }*/}}
+{{/*        }*/}}
+{{/*      },*/}}
+{{/*      "mappings": {*/}}
+{{/*        "properties": {*/}}
+{{/*          "title": {*/}}
+{{/*            "type": "text",*/}}
+{{/*            "analyzer": "autocomplete_analyzer",*/}}
+{{/*            "search_analyzer": "standard"*/}}
+{{/*          },*/}}
+{{/*          "description": {*/}}
+{{/*            "type": "text",*/}}
+{{/*            "analyzer": "autocomplete_analyzer",*/}}
+{{/*            "search_analyzer": "standard"*/}}
+{{/*          },*/}}
+{{/*          "image_url": {*/}}
+{{/*            "type": "keyword"*/}}
+{{/*          },*/}}
+{{/*          "count_in_stock": {*/}}
+{{/*            "type": "long"*/}}
+{{/*          },*/}}
+{{/*          "shop": {*/}}
+{{/*            "type": "text",*/}}
+{{/*            "analyzer": "autocomplete_analyzer",*/}}
+{{/*            "search_analyzer": "standard"*/}}
+{{/*          },*/}}
+{{/*          "created_at": {*/}}
+{{/*            "type": "date"*/}}
+{{/*          }*/}}
+{{/*        }*/}}
+{{/*      }*/}}
+{{/*    }*/}}
+
+{{/*---*/}}
+{{/*apiVersion: v1*/}}
+{{/*kind: ConfigMap*/}}
+{{/*metadata:*/}}
+{{/*  name: {{ .Values.searchMicroserviceName }}-config-map-translate-json*/}}
+{{/*data:*/}}
+{{/*  translate.json: |*/}}
+{{/*    {*/}}
+{{/*      "q": "й",*/}}
+{{/*      "й": "q",*/}}
+{{/*      "w": "ц",*/}}
+{{/*      "ц": "w",*/}}
+{{/*      "e": "у",*/}}
+{{/*      "у": "e",*/}}
+{{/*      "r": "к",*/}}
+{{/*      "к": "r",*/}}
+{{/*      "t": "е",*/}}
+{{/*      "е": "t",*/}}
+{{/*      "y": "н",*/}}
+{{/*      "н": "y",*/}}
+{{/*      "u": "г",*/}}
+{{/*      "i": "ш",*/}}
+{{/*      "ш": "i",*/}}
+{{/*      "o": "щ",*/}}
+{{/*      "щ": "o",*/}}
+{{/*      "p": "з",*/}}
+{{/*      "з": "p",*/}}
+{{/*      "[": "х",*/}}
+{{/*      "х": "[",*/}}
+{{/*      "a": "ф",*/}}
+{{/*      "ф": "a",*/}}
+{{/*      "s": "ы",*/}}
+{{/*      "ы": "s",*/}}
+{{/*      "d": "в",*/}}
+{{/*      "в": "d",*/}}
+{{/*      "f": "а",*/}}
+{{/*      "а": "f",*/}}
+{{/*      "g": "п",*/}}
+{{/*      "п": "g",*/}}
+{{/*      "h": "р",*/}}
+{{/*      "р": "h",*/}}
+{{/*      "j": "о",*/}}
+{{/*      "о": "j",*/}}
+{{/*      "k": "л",*/}}
+{{/*      "л": "k",*/}}
+{{/*      "l": "д",*/}}
+{{/*      "д": "l",*/}}
+{{/*      ";": "ж",*/}}
+{{/*      "ж": ";",*/}}
+{{/*      "'": "э",*/}}
+{{/*      "э": "'",*/}}
+{{/*      "z": "я",*/}}
+{{/*      "я": "z",*/}}
+{{/*      "x": "ч",*/}}
+{{/*      "ч": "x",*/}}
+{{/*      "c": "с",*/}}
+{{/*      "с": "c",*/}}
+{{/*      "v": "м",*/}}
+{{/*      "м": "v",*/}}
+{{/*      "b": "и",*/}}
+{{/*      "и": "b",*/}}
+{{/*      "n": "т",*/}}
+{{/*      "т": "n",*/}}
+{{/*      "m": "ь",*/}}
+{{/*      "ь": "m",*/}}
+{{/*      ",": "б",*/}}
+{{/*      "б": ",",*/}}
+{{/*      ".": "ю",*/}}
+{{/*      "ю": ".",*/}}
+{{/*      " ": " "*/}}
+{{/*    }*/}}

@@ -22,11 +22,11 @@ func TestIndexAsync(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
 	defer cancel()
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 1000; i++ {
 		product := domain.Product{
 			ID:           uuid.NewV4().String(),
-			Title:        gofakeit.Fruit(),
-			Description:  gofakeit.AdjectiveDescriptive(),
+			Title:        gofakeit.Breakfast(),
+			Description:  gofakeit.LoremIpsumSentence(50),
 			ImageURL:     gofakeit.URL(),
 			CountInStock: gofakeit.Int64(),
 			Shop:         gofakeit.Company(),
