@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/AleksK1NG/go-elasticsearch/config"
+	"github.com/AleksK1NG/go-elasticsearch/internal/metrics"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/domain"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/serializer"
@@ -24,6 +25,7 @@ type consumer struct {
 	productUseCase domain.ProductUseCase
 	bulkIndexer    esutil.BulkIndexer
 	esClient       *elasticsearch.Client
+	metrics        *metrics.SearchMicroserviceMetrics
 }
 
 func NewConsumer(
@@ -33,8 +35,9 @@ func NewConsumer(
 	amqpChan *amqp.Channel,
 	productUseCase domain.ProductUseCase,
 	esClient *elasticsearch.Client,
+	metrics *metrics.SearchMicroserviceMetrics,
 ) *consumer {
-	return &consumer{log: log, cfg: cfg, amqpConn: amqpConn, amqpChan: amqpChan, productUseCase: productUseCase, esClient: esClient}
+	return &consumer{log: log, cfg: cfg, amqpConn: amqpConn, amqpChan: amqpChan, productUseCase: productUseCase, esClient: esClient, metrics: metrics}
 }
 
 func (c *consumer) ConsumeIndexDeliveries(ctx context.Context, deliveries <-chan amqp.Delivery, workerID int) func() error {
@@ -49,13 +52,16 @@ func (c *consumer) ConsumeIndexDeliveries(ctx context.Context, deliveries <-chan
 
 			case msg, ok := <-deliveries:
 				if !ok {
-					c.log.Errorf("NOT OK deliveries")
+					c.log.Errorf("NOT OK deliveries channel closed for queue: %s", c.cfg.ExchangeAndQueueBindings.IndexProductBinding.QueueName)
+					return errors.New("deliveries channel closed")
 				}
 				c.log.Infof("Consumer delivery: workerID: %d, msg data: %s, headers: %+v", workerID, string(msg.Body), msg.Headers)
 				if err := c.bulkIndexProduct(ctx, msg); err != nil {
-					return err
+					c.log.Errorf("bulkIndexProduct err: %v", err)
+					continue
 				}
 				c.log.Infof("Consumer <<<ACK>>> delivery: workerID: %d, msg data: %s, headers: %+v", workerID, string(msg.Body), msg.Headers)
+				c.metrics.RabbitMQSuccessBatchInsertMessages.Inc()
 			}
 		}
 

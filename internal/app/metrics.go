@@ -17,15 +17,6 @@ func (a *app) runMetrics(cancel context.CancelFunc) {
 		}))
 
 		a.metricsServer.GET(a.cfg.Probes.PrometheusPath, echo.WrapHandler(promhttp.Handler()))
-		//a.metricsServer.GET(a.cfg.Probes.LivenessPath, func(c echo.Context) error {
-		//	a.log.Debugf("live healthcheck %s", c.Request().URL.Path)
-		//	return c.JSON(http.StatusOK, "OK")
-		//})
-		//a.metricsServer.GET(a.cfg.Probes.ReadinessPath, func(c echo.Context) error {
-		//	a.log.Debugf("ready healthcheck %s", c.Request().URL.Path)
-		//	return c.JSON(http.StatusOK, "OK")
-		//})
-
 		a.log.Infof("Metrics app is running on port: %s", a.cfg.Probes.PrometheusPort)
 		if err := a.metricsServer.Start(a.cfg.Probes.PrometheusPort); err != nil {
 			a.log.Errorf("metricsServer.Start: %v", err)

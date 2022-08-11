@@ -40,7 +40,7 @@ func (a *app) configureHealthCheckEndpoints(ctx context.Context, health healthch
 		_, err := esclient.Info(ctx, a.elasticClient)
 		if err != nil {
 			a.log.Warnf("(ElasticSearch Readiness Check) err: %v", err)
-			return err
+			return errors.Wrap(err, "esclient.Info")
 		}
 		return nil
 	}, time.Duration(a.cfg.Probes.CheckIntervalSeconds)*time.Second))
@@ -49,7 +49,7 @@ func (a *app) configureHealthCheckEndpoints(ctx context.Context, health healthch
 		_, err := esclient.Info(ctx, a.elasticClient)
 		if err != nil {
 			a.log.Warnf("(ElasticSearch Liveness Check) err: %v", err)
-			return err
+			return errors.Wrap(err, "esclient.Info")
 		}
 		return nil
 	}, time.Duration(a.cfg.Probes.CheckIntervalSeconds)*time.Second))

@@ -4,7 +4,14 @@ import (
 	"context"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/rabbitmq"
 	"github.com/avast/retry-go"
+	"github.com/pkg/errors"
 	"time"
+)
+
+const (
+	prefetchCount = 1
+	prefetchSize  = 0
+	qosGlobal     = true
 )
 
 func (a *app) initRabbitMQ(ctx context.Context) error {
@@ -22,21 +29,19 @@ func (a *app) initRabbitMQ(ctx context.Context) error {
 	return retry.Do(func() error {
 		amqpConn, err := rabbitmq.NewRabbitMQConnection(a.cfg.RabbitMQ)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "rabbitmq.NewRabbitMQConnection")
 		}
-		//defer amqpConn.Close()
 		a.amqpConn = amqpConn
 
 		amqpChan, err := amqpConn.Channel()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "amqpConn.Channel")
 		}
-		//defer amqpChan.Close()
 		a.amqpChan = amqpChan
 
-		if err := a.amqpChan.Qos(1, 0, true); err != nil {
+		if err := a.amqpChan.Qos(prefetchCount, prefetchSize, qosGlobal); err != nil {
 			a.log.Errorf("amqpChan.Qos err: %v", err)
-			return err
+			return errors.Wrap(err, "amqpChan.Qos")
 		}
 
 		a.log.Infof("rabbitmq connected: %+v", a.amqpConn)
@@ -68,7 +73,7 @@ func (a *app) initRabbitMQPublisher(ctx context.Context) error {
 	return retry.Do(func() error {
 		amqpPublisher, err := rabbitmq.NewPublisher(a.cfg.RabbitMQ, a.log)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "rabbitmq.NewPublisher")
 		}
 		a.amqpPublisher = amqpPublisher
 		return nil

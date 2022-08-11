@@ -4,13 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"github.com/AleksK1NG/go-elasticsearch/config"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/domain"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/misstype_manager"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/serializer"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/utils"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/opentracing/opentracing-go"
@@ -22,6 +22,10 @@ import (
 const (
 	indexTimeout  = 5 * time.Second
 	searchTimeout = 5 * time.Second
+)
+
+var (
+	searchFields = []string{"title", "description"}
 )
 
 type esRepository struct {
@@ -47,7 +51,7 @@ func (e *esRepository) Index(ctx context.Context, product domain.Product) error 
 
 	dataBytes, err := serializer.Marshal(&product)
 	if err != nil {
-		return errors.Wrap(err, "json.Marshal")
+		return tracing.TraceWithErr(span, errors.Wrap(err, "serializer.Marshal"))
 	}
 
 	response, err := e.esClient.Index(
@@ -60,12 +64,12 @@ func (e *esRepository) Index(ctx context.Context, product domain.Product) error 
 		e.esClient.Index.WithDocumentID(product.ID),
 	)
 	if err != nil {
-		return errors.Wrap(err, "esClient.Index")
+		return tracing.TraceWithErr(span, errors.Wrap(err, "esClient.Index"))
 	}
 	defer response.Body.Close()
 
 	if response.IsError() {
-		return errors.Wrap(errors.New(response.String()), "esClient.Index response error")
+		return tracing.TraceWithErr(span, errors.Wrap(errors.New(response.String()), "esClient.Index response error"))
 	}
 
 	e.log.Infof("document indexed: %s", response.String())
@@ -84,12 +88,13 @@ func (e *esRepository) Search(ctx context.Context, term string, pagination *util
 					{
 						"multi_match": map[string]any{
 							"query":  term,
-							"fields": []string{"title", "description"},
-						}},
+							"fields": searchFields,
+						},
+					},
 					{
 						"multi_match": map[string]any{
 							"query":  e.missTypeManager.GetMissTypedWord(term),
-							"fields": []string{"title", "description"},
+							"fields": searchFields,
 						},
 					},
 				},
@@ -99,11 +104,10 @@ func (e *esRepository) Search(ctx context.Context, term string, pagination *util
 
 	dataBytes, err := serializer.Marshal(&shouldQuery)
 	if err != nil {
-		return nil, err
+		return nil, tracing.TraceWithErr(span, errors.Wrap(err, "serializer.Marshal"))
 	}
 
-	e.log.Infof("JSON QUERY : %+v", shouldQuery)
-	e.log.Infof("JSON BODY: %s", string(dataBytes))
+	e.log.Debugf("Search json query: %+v", shouldQuery)
 
 	response, err := e.esClient.Search(
 		e.esClient.Search.WithContext(ctx),
@@ -116,19 +120,19 @@ func (e *esRepository) Search(ctx context.Context, term string, pagination *util
 		e.esClient.Search.WithFrom(pagination.GetOffset()),
 	)
 	if err != nil {
-		return nil, err
+		return nil, tracing.TraceWithErr(span, errors.Wrap(err, "esClient.Search"))
 	}
 	defer response.Body.Close()
 
 	if response.IsError() {
-		return nil, errors.Wrap(errors.New(response.String()), "esClient.Search error")
+		return nil, tracing.TraceWithErr(span, errors.Wrap(errors.New(response.String()), "esClient.Search error"))
 	}
 
 	e.log.Infof("repository search result: %s", response.String())
 
 	hits := esclient.EsHits[*domain.Product]{}
-	if err := json.NewDecoder(response.Body).Decode(&hits); err != nil {
-		return nil, err
+	if err := serializer.NewDecoder(response.Body).Decode(&hits); err != nil {
+		return nil, tracing.TraceWithErr(span, errors.Wrap(err, "serializer.Decode"))
 	}
 
 	responseList := make([]*domain.Product, len(hits.Hits.Hits))
