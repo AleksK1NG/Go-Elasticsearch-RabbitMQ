@@ -1,0 +1,16 @@
+
+searchMicroserviceName: search-microservice
+searchMicroserviceReplicas: 1
+searchMicroserviceImage: alexanderbryksin/search_microservice:latest
+searchMicroserviceInitialDelaySeconds: 15
+searchMicroserviceLivenessProbePath: /live
+searchMicroserviceLivenessProbePort: 3001
+searchMicroserviceReadinessProbePath: /ready
+searchMicroserviceReadinessProbePort: 3001
+searchMicroserviceHttpPort: 8000
+searchMicroserviceMetricsPort: 8001
+searchMicroserviceHealthcheckPort: 3001
+
+jaegerHotPost: jaeger:6831
+rabbitMqURI: amqp://guest:guest@rabbitmq:5672/
+elasticSearchURL: http://elastic:9200

@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: search-microservice
+  name: {{ .Values.searchMicroserviceName }}
   labels:
-    app: search-microservice
+    app: {{ .Values.searchMicroserviceName }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.searchMicroserviceReplicas }}
   template:
     metadata:
-      name: search-microservice
+      name: {{ .Values.searchMicroserviceName }}
       labels:
-        app: search-microservice
+        app: {{ .Values.searchMicroserviceName }}
     spec:
       containers:
-        - name: search-microservice
-          image: alexanderbryksin/search_microservice:latest
+        - name: {{ .Values.searchMicroserviceName }}
+          image: {{.Values.searchMicroserviceImage }}
           imagePullPolicy: Always
           resources:
             requests:
@@ -25,35 +25,35 @@ spec:
               cpu: "1000m"
           livenessProbe:
             httpGet:
-              path: /live
-              port: 3001
-            initialDelaySeconds: 15
+              path: {{.Values.searchMicroserviceLivenessProbePath }}
+              port: {{.Values.searchMicroserviceLivenessProbePort }}
+            initialDelaySeconds: {{ .Values.searchMicroserviceInitialDelaySeconds }}
             periodSeconds: 5
           readinessProbe:
             httpGet:
-              path: /ready
-              port: 3001
-            initialDelaySeconds: 15
+              path: {{.Values.searchMicroserviceReadinessProbePath }}
+              port: {{.Values.searchMicroserviceReadinessProbePort }}
+            initialDelaySeconds: {{ .Values.searchMicroserviceInitialDelaySeconds }}
             periodSeconds: 5
           ports:
-            - containerPort: 8000
+            - containerPort: {{.Values.searchMicroserviceHttpPort }}
               name: http
-            - containerPort: 8001
+            - containerPort: {{.Values.searchMicroserviceMetricsPort }}
               name: metrics
-            - containerPort: 3001
+            - containerPort: {{.Values.searchMicroserviceHealthcheckPort }}
               name: healthcheck
           env:
             - name: JAEGER_HOST_PORT
-              value: jaeger:6831
+              value: {{ .Values.jaegerHotPost }}
             - name: ELASTIC_URL
-              value: http://elastic:9200
+              value: {{ .Values.elasticSearchURL }}
             - name: RABBITMQ_URI
-              value: amqp://guest:guest@rabbitmq:5672/
+              value: {{ .Values.rabbitMqURI }}
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
   selector:
     matchLabels:
-      app: search-microservice
+      app: {{ .Values.searchMicroserviceName }}
 
 ---
 
@@ -62,20 +62,41 @@ kind: Service
 metadata:
   name: search-microservice-service
   labels:
-    app: search-microservice
+    app: {{ .Values.searchMicroserviceName }}
 spec:
   type: ClusterIP
   selector:
-    app: search-microservice
+    app: {{ .Values.searchMicroserviceName }}
   ports:
     - name: http
-      port: 8000
+      port: {{.Values.searchMicroserviceHttpPort }}
       protocol: TCP
     - name: healthcheck
-      port: 3001
+      port: {{.Values.searchMicroserviceHealthcheckPort }}
       protocol: TCP
       targetPort: metrics
     - name: metrics
-      port: 8001
+      port: {{.Values.searchMicroserviceMetricsPort }}
       protocol: TCP
       targetPort: metrics
+
+---
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    release: monitoring
+  name: search-microservice-service-monitor
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.searchMicroserviceName }}
+  endpoints:
+    - interval: 10s
+      port: metrics
+      path: /metrics
+  namespaceSelector:
+    matchNames:
+      - default

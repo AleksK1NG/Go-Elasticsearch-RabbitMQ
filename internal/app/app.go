@@ -2,8 +2,8 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"github.com/AleksK1NG/go-elasticsearch/config"
+	"github.com/AleksK1NG/go-elasticsearch/internal/metrics"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/repository"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/transport/http/v1"
 	productRabbitConsumer "github.com/AleksK1NG/go-elasticsearch/internal/product/transport/rabbitmq"
@@ -13,19 +13,15 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/pkg/middlewares"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/misstype_manager"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/rabbitmq"
-	"github.com/AleksK1NG/go-elasticsearch/pkg/serializer"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/go-playground/validator"
 	"github.com/labstack/echo/v4"
 	"github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"io"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -48,6 +44,7 @@ type app struct {
 	missTypeManager   misstype_manager.MissTypeManager
 	metricsServer     *echo.Echo
 	healthCheckServer *http.Server
+	metrics           *metrics.SearchMicroserviceMetrics
 }
 
 func NewApp(log logger.Logger, cfg *config.Config) *app {
@@ -73,6 +70,7 @@ func (a *app) Run() error {
 	}
 
 	a.middlewareManager = middlewares.NewMiddlewareManager(a.log, a.cfg, a.getHttpMetricsCb())
+	a.metrics = metrics.NewSearchMicroserviceMetrics(a.cfg)
 
 	if err := a.initRabbitMQ(ctx); err != nil {
 		return err
@@ -158,122 +156,4 @@ func (a *app) Run() error {
 	<-a.doneCh
 	a.log.Infof("%s app exited properly", GetMicroserviceName(a.cfg))
 	return nil
-}
-
-func (a *app) waitShootDown(duration time.Duration) {
-	go func() {
-		time.Sleep(duration)
-		a.doneCh <- struct{}{}
-	}()
-}
-
-func GetMicroserviceName(cfg *config.Config) string {
-	return fmt.Sprintf("(%s)", strings.ToUpper(cfg.ServiceName))
-}
-
-func (a *app) initIndexes(ctx context.Context) error {
-	exists, err := a.isIndexExists(ctx, a.cfg.ElasticIndexes.ProductsIndex.Name)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		if err := a.uploadElasticMappings(ctx, a.cfg.ElasticIndexes.ProductsIndex); err != nil {
-			return err
-		}
-	}
-	a.log.Infof("index exists: %+v", a.cfg.ElasticIndexes.ProductsIndex)
-	return nil
-}
-
-func (a *app) isIndexExists(ctx context.Context, indexName string) (bool, error) {
-	response, err := esclient.Exists(ctx, a.elasticClient, []string{indexName})
-	if err != nil {
-		a.log.Errorf("initIndexes err: %v", err)
-		return false, errors.Wrap(err, "esclient.Exists")
-	}
-	defer response.Body.Close()
-
-	if response.IsError() && response.StatusCode == 404 {
-		return false, nil
-	}
-
-	a.log.Infof("exists response: %s", response)
-	return true, nil
-}
-
-func (a *app) uploadElasticMappings(ctx context.Context, indexConfig esclient.ElasticIndex) error {
-	getwd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "os.Getwd")
-	}
-	path := fmt.Sprintf("%s/%s", getwd, indexConfig.Path)
-
-	mappingsFile, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer mappingsFile.Close()
-
-	mappingsBytes, err := io.ReadAll(mappingsFile)
-	if err != nil {
-		return err
-	}
-
-	a.log.Infof("loaded mappings bytes: %s", string(mappingsBytes))
-
-	response, err := esclient.CreateIndex(ctx, a.elasticClient, indexConfig.Name, mappingsBytes)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	if response.IsError() && response.StatusCode != 400 {
-		return errors.New(fmt.Sprintf("err init index: %s", response.String()))
-	}
-
-	a.log.Infof("created index: %s", response.String())
-
-	return nil
-}
-
-func (a *app) loadKeysMappings() (*misstype_manager.KeyboardMissTypeManager, error) {
-	getwd, err := os.Getwd()
-	if err != nil {
-		return nil, errors.Wrap(err, "os.Getwd")
-	}
-
-	keysJsonPathFile, err := os.Open(fmt.Sprintf("%s/config/translate.json", getwd))
-	if err != nil {
-		return nil, err
-	}
-	defer keysJsonPathFile.Close()
-
-	keysJsonBytes, err := io.ReadAll(keysJsonPathFile)
-	if err != nil {
-		return nil, err
-	}
-
-	a.log.Infof("keys mappings: %s", string(keysJsonBytes))
-
-	keyMappings := map[string]string{}
-	if err := serializer.Unmarshal(keysJsonBytes, &keyMappings); err != nil {
-		return nil, err
-	}
-	a.log.Infof("keys mappings data: %+v", keyMappings)
-
-	missTypeManager := misstype_manager.NewMissTypeManager(a.log, keyMappings)
-
-	a.log.Infof("keys mappings processed data: %s", missTypeManager.GetMissTypedWord("Фдуч ЗКЩ"))
-
-	return missTypeManager, nil
-}
-
-func (a *app) getHttpMetricsCb() middlewares.MiddlewareMetricsCb {
-	return func(err error) {
-		if err != nil {
-			//a.metrics.ErrorHttpRequests.Inc()
-		} else {
-			//a.metrics.SuccessHttpRequests.Inc()
-		}
-	}
 }

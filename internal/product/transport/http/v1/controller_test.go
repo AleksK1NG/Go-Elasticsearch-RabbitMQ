@@ -22,29 +22,31 @@ func TestIndexAsync(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
 	defer cancel()
 
-	product := domain.Product{
-		ID:           uuid.NewV4().String(),
-		Title:        gofakeit.Fruit(),
-		Description:  gofakeit.AdjectiveDescriptive(),
-		ImageURL:     gofakeit.URL(),
-		CountInStock: gofakeit.Int64(),
-		Shop:         gofakeit.Company(),
-		CreatedAt:    time.Now().UTC(),
+	for i := 0; i < 100; i++ {
+		product := domain.Product{
+			ID:           uuid.NewV4().String(),
+			Title:        gofakeit.Fruit(),
+			Description:  gofakeit.AdjectiveDescriptive(),
+			ImageURL:     gofakeit.URL(),
+			CountInStock: gofakeit.Int64(),
+			Shop:         gofakeit.Company(),
+			CreatedAt:    time.Now().UTC(),
+		}
+
+		t.Logf("product: %+v", product)
+
+		response, err := client.R().
+			SetContext(ctx).
+			SetBody(product).
+			Post("http://localhost:8000/api/v1/products/async")
+		require.NoError(t, err)
+		require.NotNil(t, response)
+		require.False(t, response.IsError())
+		require.True(t, response.IsSuccess())
+		require.Equal(t, response.StatusCode(), http.StatusCreated)
+
+		t.Logf("response: %s", response.String())
 	}
-
-	t.Logf("product: %+v", product)
-
-	response, err := client.R().
-		SetContext(ctx).
-		SetBody(product).
-		Post("http://localhost:8000/api/v1/products/async")
-	require.NoError(t, err)
-	require.NotNil(t, response)
-	require.False(t, response.IsError())
-	require.True(t, response.IsSuccess())
-	require.Equal(t, response.StatusCode(), http.StatusCreated)
-
-	t.Logf("response: %s", response.String())
 }
 
 func TestIndexProduct(t *testing.T) {
