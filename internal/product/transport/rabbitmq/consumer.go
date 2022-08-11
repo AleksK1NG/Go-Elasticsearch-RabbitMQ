@@ -55,11 +55,13 @@ func (c *consumer) ConsumeIndexDeliveries(ctx context.Context, deliveries <-chan
 					c.log.Errorf("NOT OK deliveries channel closed for queue: %s", c.cfg.ExchangeAndQueueBindings.IndexProductBinding.QueueName)
 					return errors.New("deliveries channel closed")
 				}
+
 				c.log.Infof("Consumer delivery: workerID: %d, msg data: %s, headers: %+v", workerID, string(msg.Body), msg.Headers)
 				if err := c.bulkIndexProduct(ctx, msg); err != nil {
 					c.log.Errorf("bulkIndexProduct err: %v", err)
 					continue
 				}
+
 				c.log.Infof("Consumer <<<ACK>>> delivery: workerID: %d, msg data: %s, headers: %+v", workerID, string(msg.Body), msg.Headers)
 				c.metrics.RabbitMQSuccessBatchInsertMessages.Inc()
 			}
