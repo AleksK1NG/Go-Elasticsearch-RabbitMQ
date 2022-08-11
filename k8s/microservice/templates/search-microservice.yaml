@@ -28,13 +28,13 @@ spec:
               path: {{.Values.searchMicroserviceLivenessProbePath }}
               port: {{.Values.searchMicroserviceLivenessProbePort }}
             initialDelaySeconds: {{ .Values.searchMicroserviceInitialDelaySeconds }}
-            periodSeconds: 5
+            periodSeconds: {{ .Values.searchMicroservicePeriodSeconds }}
           readinessProbe:
             httpGet:
               path: {{.Values.searchMicroserviceReadinessProbePath }}
               port: {{.Values.searchMicroserviceReadinessProbePort }}
             initialDelaySeconds: {{ .Values.searchMicroserviceInitialDelaySeconds }}
-            periodSeconds: 5
+            periodSeconds: {{ .Values.searchMicroservicePeriodSeconds }}
           ports:
             - containerPort: {{.Values.searchMicroserviceHttpPort }}
               name: http
@@ -59,7 +59,7 @@ spec:
 {{/*            - name: translate*/}}
 {{/*              mountPath: "/config"*/}}
       restartPolicy: Always
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: {{ .Values.searchMicroserviceTerminationGracePeriodSeconds }}
       volumes:
         - name: config
           configMap:
