@@ -10,6 +10,8 @@ searchMicroserviceReadinessProbePort: 3001
 searchMicroserviceHttpPort: 8000
 searchMicroserviceMetricsPort: 8001
 searchMicroserviceHealthcheckPort: 3001
+searchMicroservicePeriodSeconds: 5
+searchMicroserviceTerminationGracePeriodSeconds: 30
 
 jaegerHotPost: jaeger:6831
 rabbitMqURI: amqp://guest:guest@rabbitmq:5672/
