@@ -15,8 +15,6 @@ const (
 	MIGRATIONS_DB_URL = "MIGRATIONS_DB_URL"
 	RabbitMQ_URI      = "RABBITMQ_URI"
 
-	ReaderServicePort = "READER_SERVICE"
-
 	Yaml          = "yaml"
 	Redis         = "redis"
 	Kafka         = "kafka"

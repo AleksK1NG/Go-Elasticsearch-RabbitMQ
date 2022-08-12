@@ -7,5 +7,5 @@ import (
 
 type ElasticRepository interface {
 	Index(ctx context.Context, product Product) error
-	Search(ctx context.Context, term string, pagination *utils.Pagination) (*ProductSearchResponse, error)
+	Search(ctx context.Context, term string, pagination *utils.Pagination) (*ProductSearch, error)
 }

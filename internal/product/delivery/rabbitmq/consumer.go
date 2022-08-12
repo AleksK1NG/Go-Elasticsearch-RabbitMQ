@@ -142,6 +142,7 @@ func (c *consumer) InitBulkIndexer() error {
 	if err != nil {
 		return errors.Wrap(err, "esutil.NewBulkIndexer")
 	}
+
 	c.bulkIndexer = bulkIndexer
 	c.log.Infof("consumer bulk indexer initialized for index: %s", c.cfg.ElasticIndexes.ProductsIndex.Name)
 	return nil

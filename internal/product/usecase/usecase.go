@@ -61,7 +61,7 @@ func (p *productUseCase) Index(ctx context.Context, product domain.Product) erro
 	return p.elasticRepository.Index(ctx, product)
 }
 
-func (p *productUseCase) Search(ctx context.Context, term string, pagination *utils.Pagination) (*domain.ProductSearchResponse, error) {
+func (p *productUseCase) Search(ctx context.Context, term string, pagination *utils.Pagination) (*domain.ProductSearch, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "productUseCase.Search")
 	defer span.Finish()
 	span.LogFields(log.String("term", term))

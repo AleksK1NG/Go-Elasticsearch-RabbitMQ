@@ -76,7 +76,7 @@ func (e *esRepository) Index(ctx context.Context, product domain.Product) error 
 	return nil
 }
 
-func (e *esRepository) Search(ctx context.Context, term string, pagination *utils.Pagination) (*domain.ProductSearchResponse, error) {
+func (e *esRepository) Search(ctx context.Context, term string, pagination *utils.Pagination) (*domain.ProductSearch, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "esRepository.Search")
 	defer span.Finish()
 	span.LogFields(log.String("term", term))
@@ -141,7 +141,7 @@ func (e *esRepository) Search(ctx context.Context, term string, pagination *util
 	}
 
 	e.log.Infof("repository search result responseList: %+v", responseList)
-	return &domain.ProductSearchResponse{
+	return &domain.ProductSearch{
 		List:               responseList,
 		PaginationResponse: utils.NewPaginationResponse(hits.Hits.Total.Value, pagination),
 	}, nil

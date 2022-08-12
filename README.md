@@ -1,4 +1,4 @@
-Go EventSourcing and CQRS with PostgreSQL, Kafka, MongoDB and ElasticSearch 👋✨💫
+Go ElasticSearch and RabbitMQ full text search microservice 👋✨💫
 
 #### 👨‍💻 Full list what has been used:
 [Elasticsearch](https://github.com/elastic/go-elasticsearch) Elasticsearch client for Go <br/>
