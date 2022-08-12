@@ -55,7 +55,7 @@ func (e *esRepository) Index(ctx context.Context, product domain.Product) error 
 	}
 
 	response, err := e.esClient.Index(
-		e.cfg.ElasticIndexes.ProductsIndex.Name,
+		e.cfg.ElasticIndexes.ProductsIndex.Alias,
 		bytes.NewReader(dataBytes),
 		e.esClient.Index.WithPretty(),
 		e.esClient.Index.WithHuman(),
@@ -111,7 +111,7 @@ func (e *esRepository) Search(ctx context.Context, term string, pagination *util
 
 	response, err := e.esClient.Search(
 		e.esClient.Search.WithContext(ctx),
-		e.esClient.Search.WithIndex(e.cfg.ElasticIndexes.ProductsIndex.Name),
+		e.esClient.Search.WithIndex(e.cfg.ElasticIndexes.ProductsIndex.Alias),
 		e.esClient.Search.WithBody(bufio.NewReader(bytes.NewReader(dataBytes))),
 		e.esClient.Search.WithPretty(),
 		e.esClient.Search.WithHuman(),

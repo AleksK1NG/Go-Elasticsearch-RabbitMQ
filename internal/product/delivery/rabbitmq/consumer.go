@@ -102,7 +102,7 @@ func (c *consumer) bulkIndexProduct(ctx context.Context, msg amqp.Delivery) erro
 		DocumentID: product.ID,
 		Body:       bytes.NewReader(msg.Body),
 		OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
-			c.log.Debugf("bulk indexer onSuccess for index: %s", c.cfg.ElasticIndexes.ProductsIndex.Name)
+			c.log.Debugf("bulk indexer onSuccess for index alias: %s", c.cfg.ElasticIndexes.ProductsIndex.Alias)
 		},
 		OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
 			if err != nil {
@@ -128,13 +128,13 @@ func (c *consumer) InitBulkIndexer() error {
 			c.log.Errorf("bulk indexer onError: %v", err)
 		},
 		OnFlushStart: func(ctx context.Context) context.Context {
-			c.log.Infof("starting bulk indexer for index: %s", c.cfg.ElasticIndexes.ProductsIndex.Name)
+			c.log.Infof("starting bulk indexer for index alias: %s", c.cfg.ElasticIndexes.ProductsIndex.Alias)
 			return ctx
 		},
 		OnFlushEnd: func(ctx context.Context) {
-			c.log.Infof("finished bulk indexer for index: %s", c.cfg.ElasticIndexes.ProductsIndex.Name)
+			c.log.Infof("finished bulk indexer for index alias: %s", c.cfg.ElasticIndexes.ProductsIndex.Alias)
 		},
-		Index:   c.cfg.ElasticIndexes.ProductsIndex.Name,
+		Index:   c.cfg.ElasticIndexes.ProductsIndex.Alias,
 		Human:   true,
 		Pretty:  true,
 		Timeout: time.Duration(c.cfg.BulkIndexerConfig.TimeoutMilliseconds) * time.Second,
@@ -144,7 +144,7 @@ func (c *consumer) InitBulkIndexer() error {
 	}
 
 	c.bulkIndexer = bulkIndexer
-	c.log.Infof("consumer bulk indexer initialized for index: %s", c.cfg.ElasticIndexes.ProductsIndex.Name)
+	c.log.Infof("consumer bulk indexer initialized for index alias: %s", c.cfg.ElasticIndexes.ProductsIndex.Alias)
 	return nil
 }
 

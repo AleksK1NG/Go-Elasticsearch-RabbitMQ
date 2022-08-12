@@ -25,7 +25,11 @@
             "Water, water, вода, Вода",
             "Juice, juice, J7, сок, Сок",
             "Apple, apple, яблоко, Яблоко",
-            "Orange, orange, Апельсинь, апельсин"
+            "Orange, orange, Апельсинь, апельсин",
+            "Cheery, cherry, Вишня, вишня",
+            "Muffin, muffin, Маффин, маффин, cookies, Cookies",
+            "Tomato, tomato, Помидор, помидор, Томат, томат",
+            "Chocolate, chocolate, Шоколад, шоколад"
           ]
         }
       }

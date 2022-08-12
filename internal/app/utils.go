@@ -37,6 +37,27 @@ func (a *app) initIndexes(ctx context.Context) error {
 		}
 	}
 	a.log.Infof("index exists: %+v", a.cfg.ElasticIndexes.ProductsIndex)
+
+	response, err := a.elasticClient.Indices.PutAlias(
+		[]string{a.cfg.ElasticIndexes.ProductsIndex.Name},
+		a.cfg.ElasticIndexes.ProductsIndex.Alias,
+		a.elasticClient.Indices.PutAlias.WithContext(ctx),
+		a.elasticClient.Indices.PutAlias.WithHuman(),
+		a.elasticClient.Indices.PutAlias.WithPretty(),
+		a.elasticClient.Indices.PutAlias.WithTimeout(5*time.Second),
+	)
+	if err != nil {
+		a.log.Errorf("Indices.PutAlias err: %v", err)
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.IsError() {
+		a.log.Errorf("create alias error: %s", response.String())
+		return errors.Wrap(errors.New(response.String()), "response.IsError")
+	}
+
+	a.log.Infof("alias: %s for indexes: %+v is created", a.cfg.ElasticIndexes.ProductsIndex.Alias, []string{a.cfg.ElasticIndexes.ProductsIndex.Name})
 	return nil
 }
 
@@ -87,7 +108,6 @@ func (a *app) uploadElasticMappings(ctx context.Context, indexConfig esclient.El
 	}
 
 	a.log.Infof("created index: %s", response.String())
-
 	return nil
 }
 
