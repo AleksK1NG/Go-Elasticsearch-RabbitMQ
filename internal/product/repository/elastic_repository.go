@@ -7,8 +7,8 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/config"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/domain"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/keyboard_manager"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
-	"github.com/AleksK1NG/go-elasticsearch/pkg/misstype_manager"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/serializer"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/utils"
@@ -29,19 +29,19 @@ var (
 )
 
 type esRepository struct {
-	log             logger.Logger
-	cfg             *config.Config
-	esClient        *elasticsearch.Client
-	missTypeManager misstype_manager.MissTypeManager
+	log                   logger.Logger
+	cfg                   *config.Config
+	esClient              *elasticsearch.Client
+	keyboardLayoutManager keyboard_manager.KeyboardLayoutManager
 }
 
 func NewEsRepository(
 	log logger.Logger,
 	cfg *config.Config,
 	esClient *elasticsearch.Client,
-	missTypeManager misstype_manager.MissTypeManager,
+	missTypeManager keyboard_manager.KeyboardLayoutManager,
 ) *esRepository {
-	return &esRepository{log: log, cfg: cfg, esClient: esClient, missTypeManager: missTypeManager}
+	return &esRepository{log: log, cfg: cfg, esClient: esClient, keyboardLayoutManager: missTypeManager}
 }
 
 func (e *esRepository) Index(ctx context.Context, product domain.Product) error {
@@ -93,7 +93,7 @@ func (e *esRepository) Search(ctx context.Context, term string, pagination *util
 					},
 					{
 						"multi_match": map[string]any{
-							"query":  e.missTypeManager.GetMissTypedWord(term),
+							"query":  e.keyboardLayoutManager.GetOppositeLayoutWord(term),
 							"fields": searchFields,
 						},
 					},

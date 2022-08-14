@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/AleksK1NG/go-elasticsearch/config"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/keyboard_manager"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/middlewares"
-	"github.com/AleksK1NG/go-elasticsearch/pkg/misstype_manager"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/serializer"
 	"github.com/pkg/errors"
 	"io"
@@ -111,7 +111,7 @@ func (a *app) uploadElasticMappings(ctx context.Context, indexConfig esclient.El
 	return nil
 }
 
-func (a *app) loadKeysMappings() (*misstype_manager.KeyboardMissTypeManager, error) {
+func (a *app) loadKeyboardLayoutManager() (keyboard_manager.KeyboardLayoutManager, error) {
 	getwd, err := os.Getwd()
 	if err != nil {
 		return nil, errors.Wrap(err, "os.Getwd")
@@ -136,11 +136,11 @@ func (a *app) loadKeysMappings() (*misstype_manager.KeyboardMissTypeManager, err
 	}
 	a.log.Infof("keys mappings data: %+v", keyMappings)
 
-	missTypeManager := misstype_manager.NewMissTypeManager(a.log, keyMappings)
+	keyboardLayoutManager := keyboard_manager.NewKeyboardLayoutManager(a.log, keyMappings)
 
-	a.log.Infof("keys mappings processed data: %s", missTypeManager.GetMissTypedWord("Фдуч ЗКЩ"))
+	a.log.Infof("keys mappings processed data: %s", keyboardLayoutManager.GetOppositeLayoutWord("Фдуч ЗКЩ"))
 
-	return missTypeManager, nil
+	return keyboardLayoutManager, nil
 }
 
 func (a *app) getHttpMetricsCb() middlewares.MiddlewareMetricsCb {

@@ -57,6 +57,7 @@ func (c *consumer) ConsumeIndexDeliveries(ctx context.Context, deliveries <-chan
 				}
 
 				c.log.Infof("Consumer delivery: workerID: %d, msg data: %s, headers: %+v", workerID, string(msg.Body), msg.Headers)
+
 				if err := c.bulkIndexProduct(ctx, msg); err != nil {
 					c.log.Errorf("bulkIndexProduct err: %v", err)
 					continue

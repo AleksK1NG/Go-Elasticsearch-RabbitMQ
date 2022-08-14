@@ -8,10 +8,15 @@ import (
 	"time"
 )
 
+const (
+	initElasticsearchClientAttempts = 5
+	initElasticsearchClientDelay    = time.Duration(1500) * time.Millisecond
+)
+
 func (a *app) initElasticsearchClient(ctx context.Context) error {
 	retryOptions := []retry.Option{
-		retry.Attempts(5),
-		retry.Delay(time.Duration(1500) * time.Millisecond),
+		retry.Attempts(initElasticsearchClientAttempts),
+		retry.Delay(initElasticsearchClientDelay),
 		retry.DelayType(retry.BackOffDelay),
 		retry.LastErrorOnly(true),
 		retry.Context(ctx),

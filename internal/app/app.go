@@ -9,9 +9,9 @@ import (
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/repository"
 	"github.com/AleksK1NG/go-elasticsearch/internal/product/usecase"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/esclient"
+	"github.com/AleksK1NG/go-elasticsearch/pkg/keyboard_manager"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/middlewares"
-	"github.com/AleksK1NG/go-elasticsearch/pkg/misstype_manager"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/rabbitmq"
 	"github.com/AleksK1NG/go-elasticsearch/pkg/tracing"
 	"github.com/elastic/go-elasticsearch/v8"
@@ -31,20 +31,20 @@ const (
 )
 
 type app struct {
-	log               logger.Logger
-	cfg               *config.Config
-	doneCh            chan struct{}
-	elasticClient     *elasticsearch.Client
-	echo              *echo.Echo
-	validate          *validator.Validate
-	middlewareManager middlewares.MiddlewareManager
-	amqpConn          *amqp.Connection
-	amqpChan          *amqp.Channel
-	amqpPublisher     rabbitmq.AmqpPublisher
-	missTypeManager   misstype_manager.MissTypeManager
-	metricsServer     *echo.Echo
-	healthCheckServer *http.Server
-	metrics           *metrics.SearchMicroserviceMetrics
+	log                   logger.Logger
+	cfg                   *config.Config
+	doneCh                chan struct{}
+	elasticClient         *elasticsearch.Client
+	echo                  *echo.Echo
+	validate              *validator.Validate
+	middlewareManager     middlewares.MiddlewareManager
+	amqpConn              *amqp.Connection
+	amqpChan              *amqp.Channel
+	amqpPublisher         rabbitmq.AmqpPublisher
+	keyboardLayoutManager keyboard_manager.KeyboardLayoutManager
+	metricsServer         *echo.Echo
+	healthCheckServer     *http.Server
+	metrics               *metrics.SearchMicroserviceMetrics
 }
 
 func NewApp(log logger.Logger, cfg *config.Config) *app {
@@ -103,7 +103,7 @@ func (a *app) Run() error {
 		return err
 	}
 
-	elasticRepository := repository.NewEsRepository(a.log, a.cfg, a.elasticClient, a.missTypeManager)
+	elasticRepository := repository.NewEsRepository(a.log, a.cfg, a.elasticClient, a.keyboardLayoutManager)
 	productUseCase := usecase.NewProductUseCase(a.log, a.cfg, elasticRepository, a.amqpPublisher)
 	productController := v1.NewProductController(a.log, a.cfg, productUseCase, a.echo.Group(a.cfg.Http.ProductsPath), a.validate, a.metrics)
 	productController.MapRoutes()

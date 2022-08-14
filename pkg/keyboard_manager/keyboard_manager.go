@@ -1,4 +1,4 @@
-package misstype_manager
+package keyboard_manager
 
 import (
 	"github.com/AleksK1NG/go-elasticsearch/pkg/logger"
@@ -6,22 +6,22 @@ import (
 	"sync"
 )
 
-type MissTypeManager interface {
-	GetMissTypedWord(originalWord string) string
+type KeyboardLayoutManager interface {
+	GetOppositeLayoutWord(originalWord string) string
 }
 
-type KeyboardMissTypeManager struct {
+type keyboardLayoutsManager struct {
 	log         logger.Logger
 	keyMappings map[string]string
 	sbPool      *sync.Pool
 }
 
-func NewMissTypeManager(log logger.Logger, keyMappings map[string]string) *KeyboardMissTypeManager {
+func NewKeyboardLayoutManager(log logger.Logger, keyMappings map[string]string) *keyboardLayoutsManager {
 	sbPool := &sync.Pool{New: func() any { return new(strings.Builder) }}
-	return &KeyboardMissTypeManager{log: log, keyMappings: keyMappings, sbPool: sbPool}
+	return &keyboardLayoutsManager{log: log, keyMappings: keyMappings, sbPool: sbPool}
 }
 
-func (k *KeyboardMissTypeManager) GetMissTypedWord(originalWord string) string {
+func (k *keyboardLayoutsManager) GetOppositeLayoutWord(originalWord string) string {
 	originalWord = strings.ReplaceAll(originalWord, "Ё", "Е")
 	originalWord = strings.ReplaceAll(originalWord, "ё", "е")
 

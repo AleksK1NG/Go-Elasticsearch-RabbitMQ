@@ -34,7 +34,7 @@ elasticSearch:
   username: ""
   password: ""
   apiKey: ""
-  enableLogging: true
+  enableLogging: false
 elasticIndexes:
   products:
     path: config/mappings.json

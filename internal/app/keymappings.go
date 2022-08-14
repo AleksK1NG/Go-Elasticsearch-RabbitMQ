@@ -3,11 +3,11 @@ package app
 import "github.com/pkg/errors"
 
 func (a *app) loadKeyMappings() error {
-	missTypeManager, err := a.loadKeysMappings()
+	keyboardLayoutManager, err := a.loadKeyboardLayoutManager()
 	if err != nil {
-		a.log.Errorf("loadKeyMappings missTypeManager err: %v", err)
-		return errors.Wrap(err, "loadKeysMappings")
+		a.log.Errorf("loadKeyMappings keyboardLayoutManager err: %v", err)
+		return errors.Wrap(err, "loadKeyboardLayoutManager")
 	}
-	a.missTypeManager = missTypeManager
+	a.keyboardLayoutManager = keyboardLayoutManager
 	return nil
 }

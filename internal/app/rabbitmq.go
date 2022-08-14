@@ -9,15 +9,17 @@ import (
 )
 
 const (
-	prefetchCount = 1
-	prefetchSize  = 0
-	qosGlobal     = true
+	prefetchCount        = 1
+	prefetchSize         = 0
+	qosGlobal            = true
+	initRabbitMQAttempts = 5
+	initRabbitMQDelay    = time.Duration(1500) * time.Millisecond
 )
 
 func (a *app) initRabbitMQ(ctx context.Context) error {
 	retryOptions := []retry.Option{
-		retry.Attempts(5),
-		retry.Delay(time.Duration(1500) * time.Millisecond),
+		retry.Attempts(initRabbitMQAttempts),
+		retry.Delay(initRabbitMQDelay),
 		retry.DelayType(retry.BackOffDelay),
 		retry.LastErrorOnly(true),
 		retry.Context(ctx),
@@ -60,8 +62,8 @@ func (a *app) closeRabbitConn() {
 
 func (a *app) initRabbitMQPublisher(ctx context.Context) error {
 	retryOptions := []retry.Option{
-		retry.Attempts(5),
-		retry.Delay(time.Duration(1500) * time.Millisecond),
+		retry.Attempts(initRabbitMQAttempts),
+		retry.Delay(initRabbitMQDelay),
 		retry.DelayType(retry.BackOffDelay),
 		retry.LastErrorOnly(true),
 		retry.Context(ctx),
