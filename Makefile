@@ -66,7 +66,7 @@ dry_run:
 	kubens default
 	kubectl apply --dry-run=client -f k8s/microservice/templates/servicemonitor.yaml
 
-port_forward_microservice:
+port_forward_search_microservice:
 	kubens default
 	kubectl port-forward services/microservice-service 8000:8000
 

@@ -66,11 +66,11 @@ func TestIndexProduct(t *testing.T) {
 
 	product := domain.Product{
 		ID:           uuid.NewV4().String(),
-		Title:        "Water",
-		Description:  "some water",
-		ImageURL:     "Image URL",
-		CountInStock: 55555,
-		Shop:         "central shop",
+		Title:        gofakeit.Breakfast(),
+		Description:  gofakeit.LoremIpsumSentence(60),
+		ImageURL:     gofakeit.URL(),
+		CountInStock: gofakeit.Int64(),
+		Shop:         gofakeit.Company(),
 		CreatedAt:    time.Now().UTC(),
 	}
 

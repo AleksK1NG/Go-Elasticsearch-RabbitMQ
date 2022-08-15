@@ -7,8 +7,8 @@ Go ElasticSearch and RabbitMQ full text search microservice 👋✨💫
 [Prometheus](https://prometheus.io/) monitoring and alerting <br/>
 [Grafana](https://grafana.com/) for to compose observability dashboards with everything from Prometheus <br/>
 [Echo](https://github.com/labstack/echo) web framework <br/>
-[Kibana](https://github.com/labstack/echo) Kibana is user interface that lets you visualize your Elasticsearch <br/>
-[Docker](https://www.docker.com/) Docker and docker compose <br/>
+[Kibana](https://github.com/labstack/echo) is user interface that lets you visualize your Elasticsearch <br/>
+[Docker](https://www.docker.com/) and docker compose <br/>
 [Kubernetes](https://kubernetes.io/) K8s <br/>
 [Helm](https://helm.sh/) The package manager for Kubernetes <br/>
 
@@ -43,4 +43,9 @@ make run_es // run microservice
 or
 ```
 make develop // run all in docker compose
+```
+
+for k8s
+```
+make install_all // helm install
 ```
