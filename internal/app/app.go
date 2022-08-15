@@ -132,7 +132,7 @@ func (a *app) Run() error {
 			a.cfg.ExchangeAndQueueBindings.IndexProductBinding.Consumer,
 			productConsumer.ConsumeIndexDeliveries,
 		); err != nil {
-			a.log.Errorf("")
+			a.log.Errorf("(rabbitmq.ConsumeQueue) err: %v", err)
 			cancel()
 		}
 	}()

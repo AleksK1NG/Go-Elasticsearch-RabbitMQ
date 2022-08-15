@@ -99,7 +99,7 @@ func (c *consumer) bulkIndexProduct(ctx context.Context, msg amqp.Delivery) erro
 
 	if err := c.bulkIndexer.Add(ctx, esutil.BulkIndexerItem{
 		Index:      c.cfg.ElasticIndexes.ProductsIndex.Name,
-		Action:     "create",
+		Action:     "index",
 		DocumentID: product.ID,
 		Body:       bytes.NewReader(msg.Body),
 		OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {

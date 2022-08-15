@@ -78,11 +78,11 @@ func (a *app) isIndexExists(ctx context.Context, indexName string) (bool, error)
 }
 
 func (a *app) uploadElasticMappings(ctx context.Context, indexConfig esclient.ElasticIndex) error {
-	getwd, err := os.Getwd()
+	getWd, err := os.Getwd()
 	if err != nil {
-		return errors.Wrap(err, "os.Getwd")
+		return errors.Wrap(err, "os.getWd")
 	}
-	path := fmt.Sprintf("%s/%s", getwd, indexConfig.Path)
+	path := fmt.Sprintf("%s/%s", getWd, indexConfig.Path)
 
 	mappingsFile, err := os.Open(path)
 	if err != nil {
@@ -112,12 +112,12 @@ func (a *app) uploadElasticMappings(ctx context.Context, indexConfig esclient.El
 }
 
 func (a *app) loadKeyboardLayoutManager() (keyboard_manager.KeyboardLayoutManager, error) {
-	getwd, err := os.Getwd()
+	getWd, err := os.Getwd()
 	if err != nil {
-		return nil, errors.Wrap(err, "os.Getwd")
+		return nil, errors.Wrap(err, "os.getWd")
 	}
 
-	keysJsonPathFile, err := os.Open(fmt.Sprintf("%s/config/translate.json", getwd))
+	keysJsonPathFile, err := os.Open(fmt.Sprintf("%s/config/translate.json", getWd))
 	if err != nil {
 		return nil, err
 	}
@@ -136,11 +136,7 @@ func (a *app) loadKeyboardLayoutManager() (keyboard_manager.KeyboardLayoutManage
 	}
 	a.log.Infof("keys mappings data: %+v", keyMappings)
 
-	keyboardLayoutManager := keyboard_manager.NewKeyboardLayoutManager(a.log, keyMappings)
-
-	a.log.Infof("keys mappings processed data: %s", keyboardLayoutManager.GetOppositeLayoutWord("Фдуч ЗКЩ"))
-
-	return keyboardLayoutManager, nil
+	return keyboard_manager.NewKeyboardLayoutManager(a.log, keyMappings), nil
 }
 
 func (a *app) getHttpMetricsCb() middlewares.MiddlewareMetricsCb {

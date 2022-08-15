@@ -97,6 +97,13 @@ func (e *esRepository) Search(ctx context.Context, term string, pagination *util
 							"fields": searchFields,
 						},
 					},
+					{
+						"range": map[string]any{
+							"count_in_stock": map[string]any{
+								"gte": 0,
+							},
+						},
+					},
 				},
 			},
 		},
