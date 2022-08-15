@@ -7,6 +7,7 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/errgroup"
 	"net/http"
 	"testing"
 	"time"
@@ -18,34 +19,40 @@ func TestIndexAsync(t *testing.T) {
 
 	client := http_client.NewHttpClient(true)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 165*time.Second)
 	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
 
-	for i := 0; i < 1000; i++ {
-		product := domain.Product{
-			ID:           uuid.NewV4().String(),
-			Title:        gofakeit.Breakfast(),
-			Description:  gofakeit.LoremIpsumSentence(60),
-			ImageURL:     gofakeit.URL(),
-			CountInStock: gofakeit.Int64(),
-			Shop:         gofakeit.Company(),
-			CreatedAt:    time.Now().UTC(),
-		}
+	for i := 0; i < 10; i++ {
+		g.Go(func() error {
+			for j := 0; j < 1000; j++ {
+				product := domain.Product{
+					ID:           uuid.NewV4().String(),
+					Title:        gofakeit.Breakfast(),
+					Description:  gofakeit.LoremIpsumSentence(1000),
+					ImageURL:     gofakeit.URL(),
+					CountInStock: gofakeit.Int64(),
+					Shop:         gofakeit.Company(),
+					CreatedAt:    time.Now().UTC(),
+				}
 
-		t.Logf("product: %+v", product)
+				t.Logf("product: %+v", product)
 
-		response, err := client.R().
-			SetContext(ctx).
-			SetBody(product).
-			Post("http://localhost:8000/api/v1/products/async")
-		require.NoError(t, err)
-		require.NotNil(t, response)
-		require.False(t, response.IsError())
-		require.True(t, response.IsSuccess())
-		require.Equal(t, response.StatusCode(), http.StatusCreated)
-
-		t.Logf("response: %s", response.String())
+				response, err := client.R().
+					SetContext(ctx).
+					SetBody(product).
+					Post("http://localhost:8000/api/v1/products/async")
+				if err != nil {
+					return err
+				}
+				t.Logf("response: %s", response.String())
+			}
+			return nil
+		})
 	}
+
+	err := g.Wait()
+	require.NoError(t, err)
 }
 
 func TestIndexProduct(t *testing.T) {
@@ -63,7 +70,7 @@ func TestIndexProduct(t *testing.T) {
 		Description:  "some water",
 		ImageURL:     "Image URL",
 		CountInStock: 55555,
-		Shop:         "Moscow shop",
+		Shop:         "central shop",
 		CreatedAt:    time.Now().UTC(),
 	}
 

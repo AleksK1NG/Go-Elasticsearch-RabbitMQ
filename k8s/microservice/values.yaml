@@ -1,4 +1,3 @@
-
 searchMicroserviceName: search-microservice
 searchMicroserviceReplicas: 1
 searchMicroserviceImage: alexanderbryksin/search_microservice:latest
@@ -13,6 +12,49 @@ searchMicroserviceHealthcheckPort: 3001
 searchMicroservicePeriodSeconds: 5
 searchMicroserviceTerminationGracePeriodSeconds: 30
 
+searchMicroserviceLogging:
+  level: info
+  devMode: false
+  encoder: json
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "300m"
+  limits:
+    memory: "1000Mi"
+    cpu: "1000m"
+
 jaegerHotPost: jaeger:6831
 rabbitMqURI: amqp://guest:guest@rabbitmq:5672/
 elasticSearchURL: http://elastic:9200
+
+http:
+  development: true
+  basePath: /api/v1
+  productsPath: /api/v1/products
+  debugErrorsResponse: true
+  ignoreLogUrls: [ "metrics", "swagger" ]
+
+prometheusPath: /metrics
+
+elasticIndexes:
+  products:
+    path: config/mappings.json
+    name: products
+    alias: products-alias
+
+exchangeAndQueueBindings:
+  indexProductBinding:
+    exchangeName: products
+    exchangeKind: direct
+    queueName: index-product
+    bindingKey: products-index
+    concurrency: 10
+    consumer: products-consumer
+
+bulkIndexer:
+  numWorkers: 10
+  flushBytes: 20000000
+  flushIntervalSeconds: 15
+  timeoutMilliseconds: 5000

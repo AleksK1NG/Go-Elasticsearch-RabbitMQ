@@ -18,11 +18,11 @@ spec:
           imagePullPolicy: Always
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "300m"
+              memory: {{.Values.resources.requests.memory }}
+              cpu: {{.Values.resources.requests.cpu }}
             limits:
-              memory: "1000Mi"
-              cpu: "1000m"
+              memory: {{.Values.resources.limits.memory }}
+              cpu: {{.Values.resources.limits.cpu }}
           livenessProbe:
             httpGet:
               path: {{.Values.searchMicroserviceLivenessProbePath }}
@@ -54,10 +54,6 @@ spec:
           volumeMounts:
             - name: config
               mountPath: "/search-config"
-{{/*            - name: mappings*/}}
-{{/*              mountPath: "/config"*/}}
-{{/*            - name: translate*/}}
-{{/*              mountPath: "/config"*/}}
       restartPolicy: Always
       terminationGracePeriodSeconds: {{ .Values.searchMicroserviceTerminationGracePeriodSeconds }}
       volumes:
@@ -76,7 +72,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: search-microservice-service
+  name: {{ .Values.searchMicroserviceName }}-service
   labels:
     app: {{ .Values.searchMicroserviceName }}
 spec:
@@ -103,7 +99,7 @@ kind: ServiceMonitor
 metadata:
   labels:
     release: monitoring
-  name: search-microservice-service-monitor
+  name: {{ .Values.searchMicroserviceName }}-service-monitor
   namespace: default
 spec:
   selector:
@@ -112,7 +108,7 @@ spec:
   endpoints:
     - interval: 10s
       port: metrics
-      path: /metrics
+      path: {{.Values.prometheusPath }}
   namespaceSelector:
     matchNames:
       - default
@@ -125,32 +121,32 @@ metadata:
   name: {{ .Values.searchMicroserviceName }}-config-map
 data:
   search-config.yaml: |
-    serviceName: search_service
+    serviceName: search_microservice
     grpc:
       port: :5001
       development: true
     http:
-      port: :8000
-      development: true
-      basePath: /api/v1
-      productsPath: /api/v1/products
-      debugErrorsResponse: true
-      ignoreLogUrls: [ "metrics", "swagger" ]
+      port: :{{ .Values.searchMicroserviceHttpPort }}
+      development: {{ .Values.http.development }}
+      basePath: {{ .Values.http.basePath }}
+      productsPath: {{ .Values.http.productsPath }}
+      debugErrorsResponse: {{ .Values.http.debugErrorsResponse }}
+      ignoreLogUrls: {{ .Values.http.ignoreLogUrls }}
     probes:
-      readinessPath: /ready
-      livenessPath: /live
-      port: :3001
+      readinessPath: {{ .Values.searchMicroserviceReadinessProbePath }}
+      livenessPath: {{ .Values.searchMicroserviceLivenessProbePath }}
+      port: :{{ .Values.searchMicroserviceHealthcheckPort }}
       pprof: :6001
-      prometheusPath: /metrics
-      prometheusPort: :8001
+      prometheusPath: {{ .Values.prometheusPath }}
+      prometheusPort: :{{.Values.searchMicroserviceMetricsPort }}
       checkIntervalSeconds: 10
     logger:
-      level: debug
-      devMode: false
-      encoder: console
+      level: {{ .Values.searchMicroserviceLogging.level }}
+      devMode: {{ .Values.searchMicroserviceLogging.devMode }}
+      encoder: {{ .Values.searchMicroserviceLogging.encoder }}
     jaeger:
       enable: true
-      serviceName: search_service
+      serviceName: {{ .Values.searchMicroserviceName }}
       hostPort: {{ .Values.jaegerHotPost }}
       logSpans: false
     timeouts:
@@ -161,24 +157,24 @@ data:
       username: ""
       password: ""
       apiKey: ""
-      enableLogging: true
+      enableLogging: false
     elasticIndexes:
       products:
-        path: config/mappings.json
-        name: products
-        alias: products-alias
+        path: {{ .Values.elasticIndexes.products.path }}
+        name: {{ .Values.elasticIndexes.products.name }}
+        alias: {{ .Values.elasticIndexes.products.alias }}
     rabbitmq:
       uri: {{ .Values.rabbitMqURI }}
     exchangeAndQueueBindings:
       indexProductBinding:
-        exchangeName: products
-        exchangeKind: direct
-        queueName: index-product
-        bindingKey: products-index
-        concurrency: 10
-        consumer: products-consumer
+        exchangeName: {{.Values.exchangeAndQueueBindings.indexProductBinding.exchangeName }}
+        exchangeKind: {{.Values.exchangeAndQueueBindings.indexProductBinding.exchangeKind }}
+        queueName: {{.Values.exchangeAndQueueBindings.indexProductBinding.queueName }}
+        bindingKey: {{.Values.exchangeAndQueueBindings.indexProductBinding.bindingKey }}
+        concurrency: {{.Values.exchangeAndQueueBindings.indexProductBinding.concurrency }}
+        consumer: {{.Values.exchangeAndQueueBindings.indexProductBinding.consumer }}
     bulkIndexer:
-      numWorkers: 10
-      flushBytes: 20000000
-      flushIntervalSeconds: 15
-      timeoutMilliseconds: 5000
+      numWorkers: {{ .Values.bulkIndexer.numWorkers }}
+      flushBytes: {{ .Values.bulkIndexer.flushBytes }}
+      flushIntervalSeconds: {{ .Values.bulkIndexer.flushIntervalSeconds }}
+      timeoutMilliseconds: {{ .Values.bulkIndexer.timeoutMilliseconds }}

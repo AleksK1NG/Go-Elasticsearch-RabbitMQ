@@ -41,9 +41,6 @@ logs-local:
 
 # ==============================================================================
 # k8s support
-# install helm chart
-# install monitoring
-# apply search service monitor
 
 install_all:
 	@echo Updating helm repositories
@@ -59,7 +56,7 @@ helm_install:
 	kubens default
 	helm install -f k8s/microservice/values.yaml search k8s/microservice
 
-helm_uninstall:
+uninstall_all:
 	kubens monitoring
 	helm uninstall monitoring
 	kubens default

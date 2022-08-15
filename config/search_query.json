@@ -7,7 +7,7 @@
             "should": [
               {
                 "multi_match": {
-                  "query": "cherry",
+                  "query": "apple",
                   "fields": [
                     "title",
                     "description"
@@ -16,7 +16,7 @@
               },
               {
                 "multi_match": {
-                  "query": "apple",
+                  "query": "яблоко",
                   "fields": [
                     "title",
                     "description"
