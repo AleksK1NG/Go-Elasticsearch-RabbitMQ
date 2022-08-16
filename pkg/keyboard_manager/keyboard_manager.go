@@ -29,7 +29,7 @@ func (k *keyboardLayoutsManager) GetOppositeLayoutWord(originalWord string) stri
 	defer k.sbPool.Put(sb)
 	sb.Reset()
 
-	for _, c := range []rune(originalWord) {
+	for _, c := range originalWord {
 		lowerCasedChar := strings.ToLower(string(c))
 		if char, ok := k.keyMappings[lowerCasedChar]; ok {
 			sb.WriteString(char)

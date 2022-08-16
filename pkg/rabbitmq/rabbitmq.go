@@ -2,13 +2,8 @@ package rabbitmq
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/labstack/echo/v4"
 	amqp "github.com/rabbitmq/amqp091-go"
-	uuid "github.com/satori/go.uuid"
 	"golang.org/x/sync/errgroup"
-	"log"
-	"time"
 )
 
 type ExchangeConfig struct {
@@ -112,55 +107,4 @@ func ConsumeQueue(ctx context.Context, channel *amqp.Channel, concurrency int, q
 	}
 
 	return eg.Wait()
-}
-
-func processDeliveries(ctx context.Context, deliveries <-chan amqp.Delivery) func() error {
-	return func() error {
-		for delivery := range deliveries {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-			}
-
-			log.Printf("delivery: %s", string(delivery.Body))
-			if err := delivery.Ack(true); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-}
-
-func Publish(ctx context.Context, channel *amqp.Channel, exchange string, key string, data any, headers map[string]any) error {
-
-	dataBytes, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	amqpHeaders := amqp.Table{}
-	if headers != nil {
-		for key, value := range headers {
-			amqpHeaders[key] = value
-		}
-	}
-
-	return channel.PublishWithContext(
-		ctx,
-		exchange,
-		key,
-		false,
-		true,
-		amqp.Publishing{
-			Headers:       amqpHeaders,
-			ContentType:   echo.MIMEApplicationJSON,
-			DeliveryMode:  2,
-			Priority:      9,
-			CorrelationId: uuid.NewV4().String(),
-			MessageId:     uuid.NewV4().String(),
-			Timestamp:     time.Now().UTC(),
-			Body:          dataBytes,
-		},
-	)
 }

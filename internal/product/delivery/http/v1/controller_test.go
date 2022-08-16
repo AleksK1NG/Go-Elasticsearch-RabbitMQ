@@ -25,7 +25,7 @@ func TestIndexAsync(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		g.Go(func() error {
-			for j := 0; j < 300; j++ {
+			for j := 0; j < 500; j++ {
 				product := domain.Product{
 					ID:           uuid.NewV4().String(),
 					Title:        gofakeit.Breakfast(),
