@@ -4,7 +4,7 @@
       "should": [
         {
           "multi_match": {
-            "query": "ьгаашт",
+            "query": "muf",
             "fields": [
               "title",
               "description",
@@ -14,18 +14,20 @@
         },
         {
           "multi_match": {
-            "query": "Muffin",
+            "query": "ьга",
             "fields": [
               "title",
               "description",
               "shop"
             ]
           }
-        },
+        }
+      ],
+      "must_not": [
         {
           "range": {
             "count_in_stock": {
-              "gte": 0
+              "lte": 10
             }
           }
         }
